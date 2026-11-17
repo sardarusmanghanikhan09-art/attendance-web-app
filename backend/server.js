@@ -2630,6 +2630,11 @@ app.post('/api/attendance/dashboard-mark', async (req, res) => {
 // Start server
 
 // Goal endpoint for slash command verification
+// Uptime ping target (e.g. UptimeRobot) so the free Space never sleeps
+app.get('/health', (req, res) => {
+  res.json({ ok: true, db: mongoose.connection.readyState === 1 });
+});
+
 app.get('/goal', (req, res) => {
   res.json({ message: 'Goal endpoint is active' });
 });
