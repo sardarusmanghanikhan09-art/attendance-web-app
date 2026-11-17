@@ -1,0 +1,29 @@
+# Run on the Oracle VM:  docker compose up -d --build
+# Needs backend/.env (MONGO_URI, JWT_SECRET, ADMIN_USERNAME, ADMIN_PASSWORD) and ./.env with API_DOMAIN.
+services:
+  backend:
+    build: ./backend
+    env_file: ./backend/.env
+    environment:
+      NODE_ENV: production
+    volumes:
+      - insightface:/root/.insightface   # buffalo_l model (~300 MB) downloads once on first scan
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?set API_DOMAIN in ./.env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  insightface:
+  caddy_data:

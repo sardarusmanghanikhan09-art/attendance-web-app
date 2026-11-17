@@ -1,0 +1,6 @@
+node_modules
+.env
+*.log
+mongod.log*
+attendance_backup.json
+data
