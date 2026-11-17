@@ -44,3 +44,5 @@ out.txt
 mongod.log*
 logcat.txt
 backend/attendance_backup.json
+# Firebase CLI cache
+.firebase/

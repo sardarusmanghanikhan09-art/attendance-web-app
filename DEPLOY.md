@@ -1,6 +1,6 @@
 # Deploying for free, 24/7
 
-- **Frontend** (`frontend/`): Vercel free tier
+- **Frontend** (`frontend/`): Firebase Hosting, free Spark plan
 - **Backend + face recognition** (`backend/`): one Docker container on an Oracle Cloud Always Free VM, behind Caddy for HTTPS
 - **Database**: your MongoDB Atlas M0 cluster (the `MONGO_URI` already in `backend/.env`)
 
@@ -75,15 +75,29 @@ Containers restart on their own after crashes and VM reboots.
 
 **Updating later:** `git pull && docker compose up -d --build`.
 
-## 5. Deploy the frontend on Vercel
+## 5. Deploy the frontend on Firebase Hosting
 
-1. Push the project to a GitHub repo (private is fine) and sign in at https://vercel.com with GitHub.
-2. **Add New → Project** → import the repo.
-   - **Root Directory: `frontend`** (Vercel then detects Vite; build `npm run build`, output `dist`).
-   - **Environment Variables**: `VITE_API_URL` = `https://api.129-10-20-30.sslip.io` (no trailing slash).
-3. Deploy. Your app is at `https://<project>.vercel.app`.
+One-time setup:
 
-If you change `VITE_API_URL` later, redeploy, because it is baked in at build time.
+1. Go to https://console.firebase.google.com → **Add project**. Skip Google Analytics. The free Spark plan is enough (no card needed).
+2. Copy the **Project ID** (shown under the project name, e.g. `attendance-1a2b3`) and put it in `.firebaserc` in place of `YOUR-FIREBASE-PROJECT-ID`.
+3. On your PC:
+   ```powershell
+   npm install -g firebase-tools
+   firebase login
+   ```
+
+Every deploy (from the project folder, in PowerShell):
+
+```powershell
+cd frontend
+$env:VITE_API_URL="https://api.129-10-20-30.sslip.io"   # your backend address, no trailing slash
+npm run build
+cd ..
+firebase deploy --only hosting
+```
+
+Your app is then live at `https://<project-id>.web.app`. If the backend address changes, build and deploy again, because it is baked in at build time.
 
 ## Android app
 
@@ -92,4 +106,4 @@ The Capacitor app uses the same `VITE_API_URL`. Build it with the variable set (
 ## Notes
 
 - Oracle may reclaim Always Free VMs that sit almost idle for 7 days (CPU under ~20%). Upgrading the account to Pay As You Go (still free within limits) avoids this.
-- CORS already accepts any origin, so the Vercel domain needs no extra config.
+- CORS already accepts any origin, so the Firebase domain needs no extra config.
