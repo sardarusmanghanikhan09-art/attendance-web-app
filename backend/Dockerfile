@@ -1,5 +1,5 @@
 # Express API + Python face daemon (server.js spawns face_service.py on 127.0.0.1:5001)
-# Built for Hugging Face Spaces: listens on 7860 and runs as uid 1000 (the "node" user)
+# Listens on 7860 (Caddy proxies to it) and runs as the non-root "node" user
 FROM node:20-bookworm-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \

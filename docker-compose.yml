@@ -1,4 +1,4 @@
-# Run on the Oracle VM:  docker compose up -d --build
+# Run on the GCP VM:  docker compose up -d --build
 # Needs backend/.env (MONGO_URI, JWT_SECRET, ADMIN_USERNAME, ADMIN_PASSWORD) and ./.env with API_DOMAIN.
 services:
   backend:

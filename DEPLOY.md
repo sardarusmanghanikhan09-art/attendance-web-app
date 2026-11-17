@@ -1,91 +1,108 @@
 # Deploying for free, 24/7
 
 - **Frontend** (`frontend/`): Firebase Hosting, free Spark plan
-- **Backend + face recognition** (`backend/`): one Docker container on a free Hugging Face Space (CPU basic), kept awake by UptimeRobot
-- **Database**: your MongoDB Atlas M0 cluster (the `MONGO_URI` already in `backend/.env`)
+- **Backend + face recognition** (`backend/`): one Docker container on a Google Cloud **Always Free e2-micro** VM, behind Caddy for HTTPS
+- **Database**: your MongoDB Atlas M0 cluster
 
-The steps below are the ones only you can do, because they need your accounts. Never paste passwords or tokens into chat.
+Never paste passwords or tokens into chat.
 
-## 1. Let Hugging Face reach Atlas
+## 1. Google Cloud project and billing
 
-Hugging Face servers have no fixed IP, so Atlas must accept any IP (your database password still protects it).
+1. Go to https://console.cloud.google.com and sign in.
+2. Top bar → project picker → **New Project** → name `attendance` → Create, then select it.
+3. **Billing**: Menu → Billing → link a billing account (a card is required, but the e2-micro below stays inside the free tier).
+4. **Budget alert** (so nothing surprises you): Billing → **Budgets & alerts** → Create budget → amount **$1** → keep the email alerts → Finish.
+5. Menu → **Compute Engine** → click **Enable** for the API (takes a minute).
 
-Atlas → **Network Access → Add IP Address → Allow access from anywhere** (`0.0.0.0/0`) → Confirm.
+## 2. Create the free VM
 
-## 2. Create the Space
+Compute Engine → VM instances → **Create instance**. Set exactly these (anything else may cost money):
 
-1. Sign up / log in at https://huggingface.co.
-2. Go to https://huggingface.co/new-space.
-   - Space name: e.g. `attendance-api`
-   - SDK: **Docker** → template **Blank**
-   - Hardware: **CPU basic (free)**
-   - Visibility: **Public** (a private Space blocks the app from calling it)
-3. Click **Create Space**.
+- Name: `attendance`
+- Region: **us-central1** (or us-west1 / us-east1, only these 3 are free). Zone: any.
+- Machine: series **E2**, type **e2-micro**
+- Boot disk → **Change**: OS **Ubuntu**, version **Ubuntu 22.04 LTS (x86/64)**, disk type **Standard persistent disk**, size **30 GB** → Select
+- Firewall: tick **Allow HTTP traffic** and **Allow HTTPS traffic**
 
-## 3. Add the secrets
+Click **Create**. Copy the **External IP** shown in the list, e.g. `34.123.45.67`.
 
-In the Space: **Settings → Variables and secrets → New secret**. Add each of these (same values as your local `backend/.env`):
+## 3. Let the VM reach Atlas
 
-| Name | Value |
-|---|---|
-| `MONGO_URI` | your Atlas URI (with `/attendance` before the `?`) |
-| `JWT_SECRET` | a long random string, e.g. from https://www.random.org/strings or `openssl rand -hex 32` |
-| `ADMIN_USERNAME` | `usman.ghani` |
-| `ADMIN_PASSWORD` | the admin password |
+Atlas → **Network Access → Add IP Address** → enter the VM's External IP → Confirm.
 
-## 4. Upload the backend
+## 4. Set up the VM
 
-1. Make a write token: https://huggingface.co/settings/tokens → **Create new token** → type **Write** → copy it.
-2. On your PC, in PowerShell:
-   ```powershell
-   pip install -U huggingface_hub
-   hf auth login
-   ```
-   Paste the token when it asks (it stays on your PC). If it asks about adding it as a git credential, answer `n`.
-3. Upload the `backend` folder. This sends only committed files, so `.env` and other local files can never leak (replace `YOUR-HF-USERNAME`):
-   ```powershell
-   cd C:\Users\abdul\PROJECTS\attendance-web-app-main
-   Remove-Item $env:TEMP\hf-backend -Recurse -Force -ErrorAction SilentlyContinue
-   git archive --format=zip -o $env:TEMP\backend.zip HEAD:backend
-   Expand-Archive $env:TEMP\backend.zip $env:TEMP\hf-backend
-   hf upload YOUR-HF-USERNAME/attendance-api $env:TEMP\hf-backend . --repo-type space --exclude "*.onnx"
-   ```
+In the VM list click **SSH** (opens a terminal in your browser). Paste these blocks one at a time.
 
-The Space starts building. Watch it in the Space's **Logs** tab: the first build takes about 10-15 minutes (it compiles the face library and bakes the face model in). It is ready when the log shows `Connected to MongoDB` and `Server running on port 7860`.
+**Swap** (the VM has only 1 GB RAM; this adds 3 GB of disk-backed memory so the build and face model fit):
+```bash
+sudo fallocate -l 3G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+```
 
-**Updating later:** commit your changes, then run the same five lines again. Only changed files are sent, then the Space rebuilds.
+**Docker:**
+```bash
+curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker $USER
+newgrp docker
+```
 
-## 5. Test it
+**Code** (the repo is private, so git asks for a username and password: enter `sardarusmanghanikhan09-art` and a GitHub token from https://github.com/settings/tokens → *Generate new token (classic)* → tick **repo**. The token is the password.):
+```bash
+git clone https://github.com/sardarusmanghanikhan09-art/attendance-web-app.git attendance
+cd attendance
+```
 
-Open `https://YOUR-HF-USERNAME-attendance-api.hf.space/health` in a browser. You should see `{"ok":true,"db":true}`.
-(The exact address is also under the Space's **⋮ → Embed this Space → Direct URL**.)
+**Secrets** (same values as your local `backend/.env`):
+```bash
+nano backend/.env
+```
+Paste, fill in, then save with `Ctrl+O`, `Enter`, `Ctrl+X`:
+```
+MONGO_URI=your-atlas-uri-with-/attendance
+JWT_SECRET=any-long-random-string
+ADMIN_USERNAME=usman.ghani
+ADMIN_PASSWORD=your-admin-password
+```
 
-`"db":false` means Atlas refused the connection: re-check step 1 and the `MONGO_URI` secret.
+**HTTPS address** (replace the IP with yours, dots become dashes):
+```bash
+echo "API_DOMAIN=api.34-123-45-67.sslip.io" > .env
+```
 
-## 6. Keep it awake with UptimeRobot
+**Start it** (the first build takes 20-40 minutes on this small VM):
+```bash
+docker compose up -d --build
+docker compose logs -f backend
+```
+Wait for `Connected to MongoDB` and `Server running on port 7860`, then press `Ctrl+C` (the app keeps running).
 
-Free Spaces go to sleep after 48 hours without visitors. A ping every 5 minutes keeps it running.
+**Test:** open `https://api.34-123-45-67.sslip.io/health` in your browser. You should see `{"ok":true,"db":true}`.
 
-1. Sign up free at https://uptimerobot.com.
-2. **Add New Monitor** → type **HTTP(s)** → URL `https://YOUR-HF-USERNAME-attendance-api.hf.space/health` → interval **5 minutes** → Create.
+Containers restart on their own after crashes and VM reboots.
 
-## 7. Deploy the frontend on Firebase Hosting
+**Updating later** (after you `git push` new code):
+```bash
+cd ~/attendance && git pull && docker compose up -d --build
+```
+
+## 5. Deploy the frontend on Firebase Hosting
 
 One-time setup:
 
-1. Go to https://console.firebase.google.com → **Add project**. Skip Google Analytics. The free Spark plan is enough (no card needed).
-2. Copy the **Project ID** (shown under the project name, e.g. `attendance-1a2b3`) and put it in `.firebaserc` in place of `YOUR-FIREBASE-PROJECT-ID`.
-3. On your PC:
-   ```powershell
+1. Go to https://console.firebase.google.com → **Add project** → pick your `attendance` Google Cloud project (or make a new one). Skip Analytics.
+2. Open `.firebaserc` and replace `YOUR-FIREBASE-PROJECT-ID` with the Project ID.
+3. In cmd on your PC:
+   ```
    npm install -g firebase-tools
    firebase login
    ```
 
-Every deploy (from the project folder, in PowerShell):
+Every deploy (cmd, replace the address with yours):
 
-```powershell
-cd frontend
-$env:VITE_API_URL="https://YOUR-HF-USERNAME-attendance-api.hf.space"   # no trailing slash
+```
+cd C:\Users\abdul\PROJECTS\attendance-web-app-main\frontend
+set VITE_API_URL=https://api.34-123-45-67.sslip.io
 npm run build
 cd ..
 firebase deploy --only hosting
@@ -93,16 +110,9 @@ firebase deploy --only hosting
 
 Your app is then live at `https://<project-id>.web.app`. If the backend address changes, build and deploy again, because it is baked in at build time.
 
-## Android app
-
-The Capacitor app uses the same `VITE_API_URL`. Build it with the variable set, then `npx cap sync`, so it talks to the Space.
-
 ## Notes
 
 - CORS already accepts any origin, so the Firebase domain needs no extra config.
-- Hugging Face restarts Spaces now and then (updates, maintenance). The app comes back on its own in about a minute.
-- Free CPU basic is 2 vCPU / 16 GB RAM. A face scan takes a second or two.
-
-## Alternative: Oracle Cloud VM
-
-`docker-compose.yml` + `Caddyfile` run the same backend image on any Linux VM with HTTPS. Put the secrets in `backend/.env`, set `API_DOMAIN` in `./.env` (see `.env.example`; `api.<ip-with-dashes>.sslip.io` works without buying a domain), open ports 80/443, whitelist the VM IP in Atlas, then `docker compose up -d --build`.
+- The External IP stays the same while the VM runs. If you ever **stop** the VM it may change; then update `.env` on the VM, Atlas, and redeploy the frontend. To pin it: VPC network → IP addresses → reserve the VM's IP as static.
+- Free tier limits: 1 e2-micro in us-west1/us-central1/us-east1, 30 GB standard disk, 1 GB outbound traffic per month. The $1 budget alert emails you if anything starts costing money.
+- The Android app uses the same `VITE_API_URL`: build with it set, then `npx cap sync`.
