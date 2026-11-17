@@ -19,7 +19,7 @@ Never paste passwords or tokens into chat.
 7. Boot volume: leave default (50 GB, free up to 200 GB).
 8. Click **Create**. When the state is **Running**, copy the **Public IP address**, e.g. `129.150.12.34`.
 
-If you get **"Out of capacity"**, try another Availability Domain on the same page (AD-2, AD-3), try 1 OCPU / 6 GB, or retry later.
+If you get **"Out of capacity"** (common in single-AD regions like Mumbai), use the other free shape instead: **Specialty and previous generation → VM.Standard.E2.1.Micro** (x86, 1 GB RAM). It works, but you must add the swap file in step 5. You can move to A1 later when capacity frees up.
 
 ## 2. Open ports 80 and 443 in Oracle's firewall
 
@@ -52,6 +52,14 @@ sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 443 -j ACCEPT
 sudo netfilter-persistent save
 ```
 
+**Swap** (only needed on the 1 GB E2.1.Micro; adds 4 GB of disk-backed memory so the build and face model fit):
+```bash
+sudo fallocate -l 4G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+free -h
+```
+`free -h` should show about 4.0Gi of Swap.
+
 **Docker:**
 ```bash
 curl -fsSL https://get.docker.com | sudo sh
@@ -82,7 +90,7 @@ ADMIN_PASSWORD=your-admin-password
 echo "API_DOMAIN=api.129-150-12-34.sslip.io" > .env
 ```
 
-**Start it** (the first build takes 10-20 minutes):
+**Start it** (the first build takes 10-20 minutes on A1, 30-60 minutes on the Micro; the image is built on the VM, so it automatically matches its CPU type):
 ```bash
 docker compose up -d --build
 docker compose logs -f backend
