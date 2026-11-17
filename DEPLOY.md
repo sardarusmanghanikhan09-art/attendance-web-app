@@ -1,43 +1,55 @@
 # Deploying for free, 24/7
 
 - **Frontend** (`frontend/`): Firebase Hosting, free Spark plan
-- **Backend + face recognition** (`backend/`): one Docker container on a Google Cloud **Always Free e2-micro** VM, behind Caddy for HTTPS
+- **Backend + face recognition** (`backend/`): one Docker container on an Oracle Cloud **Always Free Ampere A1** VM (ARM), behind Caddy for HTTPS
 - **Database**: your MongoDB Atlas M0 cluster
 
 Never paste passwords or tokens into chat.
 
-## 1. Google Cloud project and billing
+## 1. Create the free VM
 
-1. Go to https://console.cloud.google.com and sign in.
-2. Top bar → project picker → **New Project** → name `attendance` → Create, then select it.
-3. **Billing**: Menu → Billing → link a billing account (a card is required, but the e2-micro below stays inside the free tier).
-4. **Budget alert** (so nothing surprises you): Billing → **Budgets & alerts** → Create budget → amount **$1** → keep the email alerts → Finish.
-5. Menu → **Compute Engine** → click **Enable** for the API (takes a minute).
+1. Go to https://cloud.oracle.com and sign in.
+2. Menu (☰) → **Compute → Instances** → **Create instance**.
+3. Name: `attendance`.
+4. **Image and shape** → **Edit**:
+   - Image → **Change image** → **Ubuntu** → **Canonical Ubuntu 22.04** (not the "Minimal" one) → Select image.
+   - Shape → **Change shape** → **Ampere** → **VM.Standard.A1.Flex** → OCPUs **2**, Memory **12 GB** → Select shape. (Up to 4 OCPU / 24 GB in total is Always Free.)
+5. **Networking**: keep the default new VCN and public subnet, and make sure **Assign a public IPv4 address** is on.
+6. **Add SSH keys**: choose **Generate a key pair for me** → click **Save private key** (it downloads a `.key` file). Don't lose it, it's the only way into the VM.
+7. Boot volume: leave default (50 GB, free up to 200 GB).
+8. Click **Create**. When the state is **Running**, copy the **Public IP address**, e.g. `129.150.12.34`.
 
-## 2. Create the free VM
+If you get **"Out of capacity"**, try another Availability Domain on the same page (AD-2, AD-3), try 1 OCPU / 6 GB, or retry later.
 
-Compute Engine → VM instances → **Create instance**. Set exactly these (anything else may cost money):
+## 2. Open ports 80 and 443 in Oracle's firewall
 
-- Name: `attendance`
-- Region: **us-central1** (or us-west1 / us-east1, only these 3 are free). Zone: any.
-- Machine: series **E2**, type **e2-micro**
-- Boot disk → **Change**: OS **Ubuntu**, version **Ubuntu 22.04 LTS (x86/64)**, disk type **Standard persistent disk**, size **30 GB** → Select
-- Firewall: tick **Allow HTTP traffic** and **Allow HTTPS traffic**
-
-Click **Create**. Copy the **External IP** shown in the list, e.g. `34.123.45.67`.
+1. On the instance page click the **Subnet** link → **Security Lists** → **Default Security List**.
+2. **Add Ingress Rules**: Source CIDR `0.0.0.0/0`, IP Protocol **TCP**, Destination Port Range `80,443` → **Add Ingress Rules**.
 
 ## 3. Let the VM reach Atlas
 
-Atlas → **Network Access → Add IP Address** → enter the VM's External IP → Confirm.
+Atlas → **Network Access → Add IP Address** → enter the VM's Public IP → Confirm.
 
-## 4. Set up the VM
+## 4. Connect to the VM from your PC
 
-In the VM list click **SSH** (opens a terminal in your browser). Paste these blocks one at a time.
+In **cmd** (change the key filename to the one you downloaded):
+```
+mkdir %USERPROFILE%\.ssh
+move %USERPROFILE%\Downloads\ssh-key-*.key %USERPROFILE%\.ssh\oracle.key
+icacls %USERPROFILE%\.ssh\oracle.key /inheritance:r /grant:r "%USERNAME%:R"
+ssh -i %USERPROFILE%\.ssh\oracle.key ubuntu@129.150.12.34
+```
+Type `yes` when asked. You are now on the VM; everything below runs there.
 
-**Swap** (the VM has only 1 GB RAM; this adds 3 GB of disk-backed memory so the build and face model fit):
+## 5. Set up the VM
+
+Paste these blocks one at a time.
+
+**Open the ports inside Ubuntu too** (Oracle's Ubuntu image blocks them by default):
 ```bash
-sudo fallocate -l 3G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
-echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 80 -j ACCEPT
+sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 443 -j ACCEPT
+sudo netfilter-persistent save
 ```
 
 **Docker:**
@@ -67,17 +79,17 @@ ADMIN_PASSWORD=your-admin-password
 
 **HTTPS address** (replace the IP with yours, dots become dashes):
 ```bash
-echo "API_DOMAIN=api.34-123-45-67.sslip.io" > .env
+echo "API_DOMAIN=api.129-150-12-34.sslip.io" > .env
 ```
 
-**Start it** (the first build takes 20-40 minutes on this small VM):
+**Start it** (the first build takes 10-20 minutes):
 ```bash
 docker compose up -d --build
 docker compose logs -f backend
 ```
 Wait for `Connected to MongoDB` and `Server running on port 7860`, then press `Ctrl+C` (the app keeps running).
 
-**Test:** open `https://api.34-123-45-67.sslip.io/health` in your browser. You should see `{"ok":true,"db":true}`.
+**Test:** open `https://api.129-150-12-34.sslip.io/health` in your browser. You should see `{"ok":true,"db":true}`.
 
 Containers restart on their own after crashes and VM reboots.
 
@@ -86,11 +98,11 @@ Containers restart on their own after crashes and VM reboots.
 cd ~/attendance && git pull && docker compose up -d --build
 ```
 
-## 5. Deploy the frontend on Firebase Hosting
+## 6. Deploy the frontend on Firebase Hosting
 
 One-time setup:
 
-1. Go to https://console.firebase.google.com → **Add project** → pick your `attendance` Google Cloud project (or make a new one). Skip Analytics.
+1. Go to https://console.firebase.google.com → **Add project** → name it `attendance`. Skip Analytics.
 2. Open `.firebaserc` and replace `YOUR-FIREBASE-PROJECT-ID` with the Project ID.
 3. In cmd on your PC:
    ```
@@ -102,7 +114,7 @@ Every deploy (cmd, replace the address with yours):
 
 ```
 cd C:\Users\abdul\PROJECTS\attendance-web-app-main\frontend
-set VITE_API_URL=https://api.34-123-45-67.sslip.io
+set VITE_API_URL=https://api.129-150-12-34.sslip.io
 npm run build
 cd ..
 firebase deploy --only hosting
@@ -113,6 +125,7 @@ Your app is then live at `https://<project-id>.web.app`. If the backend address 
 ## Notes
 
 - CORS already accepts any origin, so the Firebase domain needs no extra config.
-- The External IP stays the same while the VM runs. If you ever **stop** the VM it may change; then update `.env` on the VM, Atlas, and redeploy the frontend. To pin it: VPC network → IP addresses → reserve the VM's IP as static.
-- Free tier limits: 1 e2-micro in us-west1/us-central1/us-east1, 30 GB standard disk, 1 GB outbound traffic per month. The $1 budget alert emails you if anything starts costing money.
+- The Public IP stays the same while the VM exists, even across reboots. If you terminate and recreate the VM, update `.env` on the VM, Atlas, and redeploy the frontend.
+- Always Free limits: Ampere A1 up to 4 OCPU / 24 GB RAM in total, 200 GB block storage, 10 TB outbound traffic per month. Stay inside them and it costs nothing. To be safe: Billing → **Budgets** → create a $1 budget with an email alert.
+- On a free-trial account, Oracle may reclaim idle Always Free VMs. Upgrading to Pay As You Go (still $0 inside the limits) stops that.
 - The Android app uses the same `VITE_API_URL`: build with it set, then `npx cap sync`.
