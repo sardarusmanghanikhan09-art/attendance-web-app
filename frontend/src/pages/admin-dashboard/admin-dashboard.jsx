@@ -1718,8 +1718,13 @@ const AdminDashboard = () => {
             </button>
           )}
           {['admin', 'super-admin', 'hr-admin'].includes(loggedAdmin?.role) && (
-            <button className="btn-add-employee" style={{ marginTop: 8, opacity: faceRebuild ? 0.7 : 1 }} disabled={!!faceRebuild} onClick={handleRebuildFaceData}>
-              {faceRebuild ? `Rebuilding face data ${faceRebuild.done}/${faceRebuild.total}` : 'Rebuild Face Data'}
+            <button className="menu-item settings-link" style={{ opacity: faceRebuild ? 0.7 : 1 }} disabled={!!faceRebuild} onClick={() => { setIsMobileMenuOpen(false); handleRebuildFaceData(); }}>
+              <svg className="menu-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="23 4 23 10 17 10" />
+                <polyline points="1 20 1 14 7 14" />
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+              </svg>
+              {faceRebuild ? `Rebuilding ${faceRebuild.done}/${faceRebuild.total}` : 'Rebuild Face Data'}
             </button>
           )}
 
