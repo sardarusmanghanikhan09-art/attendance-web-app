@@ -132,8 +132,13 @@ async function getWeeklyHoursCompleted(employeeId) {
 
 // The dev fallback is public in this repo, so production must set its own secret
 const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? null : 'dev_only_jwt_secret');
-if (!JWT_SECRET) {
-  console.error('JWT_SECRET is not set. Add it to backend/.env');
+// Missing settings: on a normal server we stop at startup; on Vercel exiting would only show a blank
+// "A server error has occurred", so every API call answers with a clear JSON error instead (see below).
+const missingConfig = [];
+if (!JWT_SECRET) missingConfig.push('JWT_SECRET');
+if (!process.env.MONGO_URI) missingConfig.push('MONGO_URI');
+if (missingConfig.length && !process.env.VERCEL) {
+  console.error(`${missingConfig.join(' and ')} not set. Add to backend/.env`);
   process.exit(1);
 }
 
@@ -230,9 +235,11 @@ app.use('/.well-known', express.static(path.join(__dirname, '.well-known')));
 
 // MongoDB connection
 const MONGO_URI = process.env.MONGO_URI;
-if (!MONGO_URI) {
-  console.error('MONGO_URI is not set. Add it to backend/.env');
-  process.exit(1);
+if (missingConfig.length) {
+  console.error(`Missing environment variables: ${missingConfig.join(', ')}`);
+  app.use((req, res) => {
+    res.status(500).json({ error: `Server is missing environment variables: ${missingConfig.join(', ')}. Add them in Vercel → Settings → Environment Variables, then redeploy.` });
+  });
 }
 
 // --- Global In-Memory Cache for Blazing Fast Scans ---
@@ -275,7 +282,7 @@ function connectDb() {
   }
   return dbPromise;
 }
-connectDb().catch(err => console.error('MongoDB connection error:', err.message));
+if (MONGO_URI) connectDb().catch(err => console.error('MongoDB connection error:', err.message));
 
 // Global middleware to check MongoDB connection status for API routes (Serverless-friendly)
 app.use('/api', async (req, res, next) => {
