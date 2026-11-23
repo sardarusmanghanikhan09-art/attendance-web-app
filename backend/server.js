@@ -373,6 +373,29 @@ app.get('/', (req, res) => {
   res.json({ status: 'ok', message: 'Attendance backend running.' });
 });
 
+// --- Email helpers (employees can log in with email or Employee ID) ---
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const normalizeEmail = (v) => (typeof v === 'string' ? v.trim().toLowerCase() : '');
+const escapeRegex = (v) => v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// Finds an employee by Employee ID, or by email (case-insensitive) when the value looks like an email
+async function findEmployeeByLogin(identifier) {
+  const id = String(identifier || '').trim();
+  if (!id) return null;
+  const byId = await Employee.findOne({ employeeId: id, isDeleted: { $ne: true } });
+  if (byId || !id.includes('@')) return byId;
+  return Employee.findOne({ email: new RegExp(`^${escapeRegex(id)}$`, 'i'), isDeleted: { $ne: true } });
+}
+// Returns an error message when the email is invalid or already used by another employee
+async function checkEmailAvailable(email, exceptEmployeeId) {
+  if (!EMAIL_RE.test(email)) return 'Please enter a valid email address.';
+  const taken = await Employee.findOne({
+    email: new RegExp(`^${escapeRegex(email)}$`, 'i'),
+    isDeleted: { $ne: true },
+    ...(exceptEmployeeId ? { employeeId: { $ne: exceptEmployeeId } } : {}),
+  }).select('employeeId name').lean();
+  return taken ? `This email is already used by ${taken.name} (ID ${taken.employeeId}).` : null;
+}
+
 // Admin login endpoint
 app.post('/api/admin-login', async (req, res) => {
   const { email, employeeId, password } = req.body;
@@ -383,7 +406,7 @@ app.post('/api/admin-login', async (req, res) => {
     return res.status(400).json({ error: 'Email/EmployeeId and password required.' });
   }
   try {
-    const admin = await Employee.findOne({ employeeId: identifier });
+    const admin = await findEmployeeByLogin(identifier);
     if (!admin) {
       return res.status(404).json({ error: 'Admin not found.' });
     }
@@ -408,7 +431,7 @@ app.post('/api/admin-login', async (req, res) => {
     // Auto-migrate missing plainPassword for Admins
     if (!admin.plainPassword) {
       try {
-        await Employee.updateOne({ employeeId: identifier }, { $set: { plainPassword: password } });
+        await Employee.updateOne({ employeeId: admin.employeeId }, { $set: { plainPassword: password } });
       } catch (e) {
         console.error('Error auto-migrating plainPassword:', e);
       }
@@ -597,14 +620,15 @@ app.post('/api/auth/register', async (req, res) => {
 // 2. Authentication - Login
 app.post('/api/auth/login', async (req, res) => {
   try {
-    const { employeeId, password } = req.body;
+    const { password } = req.body;
+    const employeeId = String(req.body.email || req.body.employeeId || '').trim();
 
     if (!employeeId || !password) {
-      return res.status(400).json({ error: 'Employee/Admin ID and password are required' });
+      return res.status(400).json({ error: 'Email (or Employee ID) and password are required' });
     }
 
     let employee;
-    if (supabase) {
+    if (supabase && !employeeId.includes('@')) {
       try {
         const { data, error } = await supabase
           .from('profiles')
@@ -627,7 +651,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     if (!employee) {
-      const mongoEmp = await Employee.findOne({ employeeId: employeeId.trim() });
+      const mongoEmp = await findEmployeeByLogin(employeeId);
       if (mongoEmp) {
         employee = {
           _id: mongoEmp._id,
@@ -643,19 +667,19 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     if (!employee) {
-      return res.status(400).json({ error: 'Invalid Employee/Admin ID or Password' });
+      return res.status(400).json({ error: 'Invalid email or password' });
     }
 
     const isMatch = await bcrypt.compare(password, employee.password);
     if (!isMatch) {
-      return res.status(400).json({ error: 'Invalid Employee/Admin ID or Password' });
+      return res.status(400).json({ error: 'Invalid email or password' });
     }
 
     // Auto-migrate missing plainPassword in MongoDB
     try {
-      const dbEmp = await Employee.findOne({ employeeId: employeeId.trim() });
+      const dbEmp = await Employee.findOne({ employeeId: employee.employeeId });
       if (dbEmp && !dbEmp.plainPassword) {
-        await Employee.updateOne({ employeeId: employeeId.trim() }, { $set: { plainPassword: password } });
+        await Employee.updateOne({ employeeId: employee.employeeId }, { $set: { plainPassword: password } });
       }
     } catch (e) {
       console.error('Error auto-migrating plainPassword:', e);
@@ -1173,9 +1197,14 @@ app.get('/api/employees/:employeeId/photo', async (req, res) => {
 app.post('/api/employees', requireRole(['admin', 'super-admin', 'hr-admin', 'sub-admin']), async (req, res) => {
   try {
     const { name, department, password, facePhotos, role, employeeType, weeklyHours, arrivalTime, departureTime } = req.body;
+    const email = normalizeEmail(req.body.email);
 
     if (!name || !department || !password || !facePhotos || !facePhotos.length) {
       return res.status(400).json({ error: 'Name, Department, Password, and 4-5 Face Photos are required' });
+    }
+    if (email) {
+      const emailErr = await checkEmailAvailable(email);
+      if (emailErr) return res.status(400).json({ error: emailErr });
     }
 
     // Query the last employee created regardless of role to find the actual maximum ID
@@ -1255,6 +1284,7 @@ app.post('/api/employees', requireRole(['admin', 'super-admin', 'hr-admin', 'sub
       _id: generatedId,
       name: name.trim(),
       employeeId: generatedId,
+      ...(email ? { email } : {}),
       password: hashedPassword,
       plainPassword: password,
       facePhoto: primaryPhoto,
@@ -1837,6 +1867,12 @@ app.put('/api/employees/:employeeId', requireRole(['admin', 'super-admin', 'hr-a
   try {
     const { name, department, password, pin, facePhotos, role, isActive, adminMessage, employeeType, weeklyHours, arrivalTime, departureTime } = req.body;
     const { employeeId } = req.params;
+    const emailSent = req.body.email !== undefined;
+    const email = normalizeEmail(req.body.email);
+    if (emailSent && email) {
+      const emailErr = await checkEmailAvailable(email, employeeId.trim());
+      if (emailErr) return res.status(400).json({ error: emailErr });
+    }
 
     const employee = await Employee.findOne({ employeeId: employeeId.trim(), isDeleted: { $ne: true } });
     let currentProfile;
@@ -1867,6 +1903,7 @@ app.put('/api/employees/:employeeId', requireRole(['admin', 'super-admin', 'hr-a
     // Update MongoDB
     if (employee) {
       if (name) employee.name = name.trim();
+      if (emailSent) employee.email = email || undefined;
       if (department) employee.department = department.trim();
       if (facePhotos && facePhotos.length > 0) {
         employee.facePhoto = facePhotos[0];

@@ -17,6 +17,13 @@ const employeeSchema = new mongoose.Schema({
     trim: true,
     maxlength: 100
   },
+  email: {
+    // Login email for employees. Stored lowercase so matching is case-insensitive.
+    type: String,
+    trim: true,
+    lowercase: true,
+    maxlength: 254
+  },
   password: {
     type: String,
     required: true,
@@ -93,6 +100,8 @@ const employeeSchema = new mongoose.Schema({
 });
 
 employeeSchema.index({ employeeId: 1 }, { unique: true });
+// Unique only among employees that have an email, so older records without one are fine
+employeeSchema.index({ email: 1 }, { unique: true, partialFilterExpression: { email: { $type: 'string' } } });
 employeeSchema.index({ role: 1, isDeleted: 1, isActive: 1 });
 employeeSchema.index({ department: 1 });
 
