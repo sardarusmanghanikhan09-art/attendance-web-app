@@ -1,5 +1,7 @@
 # Deploying for free, 24/7
 
+> **Now using Vercel instead:** see `DEPLOY_VERCEL.md`. The Oracle/Firebase steps below are kept for reference.
+
 - **Frontend** (`frontend/`): Firebase Hosting, free Spark plan
 - **Backend** (`backend/`): one small Node.js Docker container on an Oracle Cloud **Always Free** VM, behind Caddy for HTTPS. Face recognition runs on each phone/browser (see `FACE_ON_DEVICE.md`), so the 1 GB **E2.1.Micro** is enough
 - **Database**: your MongoDB Atlas M0 cluster

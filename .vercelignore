@@ -1,0 +1,10 @@
+# Old Python face code: keep it out of Vercel so it isn't built as Python functions
+api/*.py
+requirements.txt
+biometric_microservice/
+backend/*.py
+backend/models/*.onnx
+backend/attendance_backup.json
+backend/mongod.log*
+frontend/android/
+screenshot.js

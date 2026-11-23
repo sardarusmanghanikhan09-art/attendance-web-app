@@ -237,8 +237,11 @@ if (!MONGO_URI) {
 
 // --- Global In-Memory Cache for Blazing Fast Scans ---
 let employeeFaceCache = [];
+let faceCacheLoadedAt = 0;
+const FACE_CACHE_TTL_MS = 60 * 1000;
 async function refreshFaceCache() {
   try {
+    faceCacheLoadedAt = Date.now();
     const allEmployees = await Employee.find({ role: 'employee', isDeleted: { $ne: true }, isActive: true })
                                      .select('_id employeeId name faceEmbedding')
                                      .lean(); // .lean() makes queries faster by returning plain JSON
@@ -250,26 +253,36 @@ async function refreshFaceCache() {
 }
 
 mongoose.set('bufferCommands', true); // Allow commands to buffer while connecting (Fix for Vercel cold starts)
-mongoose.connect(MONGO_URI, {
-  serverSelectionTimeoutMS: 5000
-})
-  .then(async () => {
-    console.log('Connected to MongoDB');
-    await seedAdmins();
-    await seedDepartments();
-    // Do not await this, let it load in the background so Vercel Serverless doesn't timeout!
-    refreshFaceCache().catch(console.error);
-  })
-  .catch(err => console.error('MongoDB connection error:', err.message));
+
+// One shared connection promise per process. On Vercel a warm function instance reuses it across
+// requests, so only cold starts pay for connecting; a failed attempt is cleared so the next request retries.
+let dbPromise = null;
+function connectDb() {
+  if (mongoose.connection.readyState === 1) return Promise.resolve();
+  if (!dbPromise) {
+    dbPromise = mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 5000, maxPoolSize: 5 })
+      .then(async () => {
+        console.log('Connected to MongoDB');
+        await seedAdmins();
+        await seedDepartments();
+        // Do not await this, let it load in the background so Vercel Serverless doesn't timeout!
+        refreshFaceCache().catch(console.error);
+      })
+      .catch(err => {
+        dbPromise = null;
+        throw err;
+      });
+  }
+  return dbPromise;
+}
+connectDb().catch(err => console.error('MongoDB connection error:', err.message));
 
 // Global middleware to check MongoDB connection status for API routes (Serverless-friendly)
 app.use('/api', async (req, res, next) => {
   if (mongoose.connection.readyState !== 1) {
     try {
       console.log('[Database] Connection not ready. Awaiting/initiating connection...');
-      await mongoose.connect(MONGO_URI, {
-        serverSelectionTimeoutMS: 5000
-      });
+      await connectDb();
     } catch (err) {
       return res.status(503).json({
         error: 'MongoDB Database Service is currently stopped or offline. Please check your Atlas connection. Error: ' + err.message
@@ -510,6 +523,10 @@ app.post('/api/scan-attendance', async (req, res) => {
         return res.status(403).json({ error: `Face verification failed: Biometrics do not match your profile (${(similarity * 100).toFixed(1)}%)` });
       }
     } else {
+      // Serverless: each instance has its own cache, so reload it when empty or older than a minute
+      if (employeeFaceCache.length === 0 || Date.now() - faceCacheLoadedAt > FACE_CACHE_TTL_MS) {
+        await refreshFaceCache();
+      }
       // BLAZING FAST CACHE LOOKUP
       for (const emp of employeeFaceCache) {
         const similarity = cosineSimilarity(queryEmbedding, emp.faceEmbedding);
@@ -2239,61 +2256,7 @@ app.post('/api/employees/:employeeId/unlock-credentials', requireRole(['admin', 
   }
 });
 
-// Background Worker: Auto-accept pending attendance logs older than 5 minutes (300000 ms)
-setInterval(async () => {
-  if (mongoose.connection.readyState !== 1) return;
-  try {
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-
-    // Find all pending logs in MongoDB older than 5 minutes
-    const pendingLogs = await Attendance.find({
-      status: 'Pending',
-      createdAt: { $lte: fiveMinutesAgo }
-    });
-
-    if (pendingLogs.length > 0) {
-      let approvedCount = 0;
-      for (const log of pendingLogs) {
-        // Skip Saturday (6) and Sunday (0)
-        const logDay = new Date(log.createdAt).getDay();
-        if (logDay === 0 || logDay === 6) {
-          continue;
-        }
-        log.status = 'Present';
-        await log.save();
-        await syncAttendanceToSupabase(log);
-        approvedCount++;
-      }
-      if (approvedCount > 0) {
-        console.log(`[Auto-Approve] Approving ${approvedCount} pending attendance log(s) older than 5 minutes.`);
-      }
-    }
-
-    // Update on Supabase directly if connected
-    if (supabase) {
-      const { data, error } = await supabase
-        .from('attendance')
-        .select('*')
-        .eq('status', 'Pending')
-        .lte('created_at', fiveMinutesAgo.toISOString());
-
-      if (!error && data && data.length > 0) {
-        console.log(`[Auto-Approve Supabase] Approving ${data.length} pending logs on Supabase.`);
-        for (const row of data) {
-          const { error: updateErr } = await supabase
-            .from('attendance')
-            .update({ status: 'Present' })
-            .eq('id', row.id);
-          if (updateErr) {
-            console.error('Supabase auto-approve error:', updateErr.message);
-          }
-        }
-      }
-    }
-  } catch (err) {
-    console.error('Background auto-approval error:', err);
-  }
-}, 10000); // Check every 10 seconds
+// (Removed a 10-second "auto-accept pending logs" timer: its loop never changed anything, and timers don't run on Vercel.)
 
 // Background Worker: Run every 6 hours to mark past unlogged weekdays as Absent
 const runAutoAbsentCheck = async () => {
@@ -2375,9 +2338,22 @@ const runAutoAbsentCheck = async () => {
   }
 };
 
-// Run auto-absent check every 6 hours and also 5 seconds after startup
-setInterval(runAutoAbsentCheck, 6 * 60 * 60 * 1000);
-setTimeout(runAutoAbsentCheck, 5000);
+// On a normal server: run the auto-absent check every 6 hours and 5 seconds after startup.
+// On Vercel, timers stop when a request finishes, so Vercel Cron calls the endpoint below instead (vercel.json).
+if (!process.env.VERCEL) {
+  setInterval(runAutoAbsentCheck, 6 * 60 * 60 * 1000);
+  setTimeout(runAutoAbsentCheck, 5000);
+}
+
+// Vercel Cron sends "Authorization: Bearer <CRON_SECRET>" when the CRON_SECRET env var is set
+app.get('/api/cron/auto-absent', async (req, res) => {
+  const secret = process.env.CRON_SECRET;
+  if (!secret || req.headers.authorization !== `Bearer ${secret}`) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  await runAutoAbsentCheck();
+  res.json({ ok: true });
+});
 
 // --- Department Endpoints ---
 app.get('/api/departments', async (req, res) => {

@@ -6,6 +6,9 @@ export const PRODUCTION_API_URL = import.meta.env.VITE_API_URL || 'https://atten
 
 // Automatically use localhost when running locally (web), and Vercel in production or Capacitor native
 const isLocalhost = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-export const API_BASE_URL = (isLocalhost && !Capacitor.isNativePlatform())
-  ? 'http://localhost:5000'
-  : PRODUCTION_API_URL;
+const isNative = Capacitor.isNativePlatform();
+// On the web the API is served from the same Vercel domain as the site, so use relative URLs.
+// The Android app has no domain of its own, so it needs VITE_API_URL (your Vercel URL) at build time.
+export const API_BASE_URL = isNative
+  ? PRODUCTION_API_URL
+  : (isLocalhost ? 'http://localhost:5000' : (import.meta.env.VITE_API_URL || window.location.origin));
