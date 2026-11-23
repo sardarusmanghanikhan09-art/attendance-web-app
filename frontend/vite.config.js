@@ -8,6 +8,10 @@ export default defineConfig({
     react(),
     babel({ presets: [reactCompilerPreset()] })
   ],
+  // onnxruntime-web ships its own .wasm files; keep Vite's pre-bundler away from them
+  optimizeDeps: {
+    exclude: ['onnxruntime-web'],
+  },
   build: {
     chunkSizeWarningLimit: 1000,
   },

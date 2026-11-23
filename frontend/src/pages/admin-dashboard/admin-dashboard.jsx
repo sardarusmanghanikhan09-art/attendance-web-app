@@ -7,6 +7,7 @@ import './admin-dashboard.css';
 import DepartmentDeleteModal from './DepartmentDeleteModal';
 import EmployeeProfileModal from './EmployeeProfileModal';
 import HolidayModal from './HolidayModal';
+import { enrollmentFields, scanFields, rebuildEmployeeFace } from '../../face/faceEngine';
 
 const fetchWithAuth = async (url, options = {}) => {
   const token = localStorage.getItem('adminToken');
@@ -517,15 +518,7 @@ const AdminDashboard = () => {
       const timestamp = Date.now();
       const signature = await calculateSignature(blobA, blobB, token, timestamp);
 
-      const toBase64 = (blob) => new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-
-      const frameABase64 = await toBase64(blobA);
-      const frameBBase64 = await toBase64(blobB);
+      const faceFields = await scanFields(blobA, blobB);
 
       const response = await fetchWithAuth(`${API_BASE_URL}/api/admin/verify-face-for-password`, {
         method: 'POST',
@@ -535,8 +528,7 @@ const AdminDashboard = () => {
         },
         credentials: 'include',
         body: JSON.stringify({
-          frameA: frameABase64,
-          frameB: frameBBase64,
+          ...faceFields,
           adminId: loggedAdmin?.employeeId || loggedAdmin?.id || '',
           targetEmployeeId: editingEmployee.employeeId || editingEmployee.id || ''
         })
@@ -786,6 +778,30 @@ const AdminDashboard = () => {
     }
   }, [activeTab, loggedAdmin]);
 
+  // Recompute every employee's face data on this device from their stored photos.
+  // Needed once after moving recognition on-device, because older embeddings may come from a different model.
+  const [faceRebuild, setFaceRebuild] = useState(null);
+  const handleRebuildFaceData = async () => {
+    if (faceRebuild) return;
+    if (!window.confirm(`Rebuild face data for ${employees.length} employees from their stored photos? Keep this tab open until it finishes.`)) return;
+    const failed = [];
+    let skipped = 0;
+    for (let i = 0; i < employees.length; i++) {
+      const emp = employees[i];
+      setFaceRebuild({ done: i, total: employees.length });
+      try {
+        const ok = await rebuildEmployeeFace(API_BASE_URL, emp.employeeId, fetchWithAuth, { 'x-user-role': getAdminRole() });
+        if (!ok) skipped++;
+      } catch (err) {
+        failed.push(`${emp.name} (${err.message})`);
+      }
+    }
+    setFaceRebuild(null);
+    alert(`Face data rebuilt for ${employees.length - skipped - failed.length} employees.`
+      + (skipped ? `\n${skipped} skipped (fewer than 4 photos).` : '')
+      + (failed.length ? `\nFailed: ${failed.join(', ')}` : ''));
+  };
+
   const handleAddEmployee = async (e) => {
     e.preventDefault();
     if (!newEmployee.name || !newEmployee.department || !newEmployee.password || !newEmployee.facePhotos || newEmployee.facePhotos.length === 0) {
@@ -794,6 +810,13 @@ const AdminDashboard = () => {
     }
 
     try {
+      let faceFields;
+      try {
+        faceFields = await enrollmentFields(newEmployee.facePhotos);
+      } catch (faceErr) {
+        alert(faceErr.message);
+        return;
+      }
       const response = await fetchWithAuth(`${API_BASE_URL}/api/employees`, {
         method: 'POST',
         headers: {
@@ -801,7 +824,7 @@ const AdminDashboard = () => {
           'x-user-role': getAdminRole(),
         },
         credentials: 'include',
-        body: JSON.stringify(newEmployee)
+        body: JSON.stringify({ ...newEmployee, faceEmbedding: faceFields.faceEmbedding })
       });
       if (response.ok) {
         fetchData();
@@ -839,6 +862,15 @@ const AdminDashboard = () => {
     }
 
     try {
+      const payload = { ...editingEmployee };
+      if (payload.facePhotos && payload.facePhotos.length > 0) {
+        try {
+          payload.faceEmbedding = (await enrollmentFields(payload.facePhotos)).faceEmbedding;
+        } catch (faceErr) {
+          alert(faceErr.message);
+          return;
+        }
+      }
       const response = await fetchWithAuth(`${API_BASE_URL}/api/employees/${encodeURIComponent(editingEmployee.id)}`, {
         method: 'PUT',
         headers: {
@@ -846,7 +878,7 @@ const AdminDashboard = () => {
           'x-user-role': getAdminRole(),
         },
         credentials: 'include',
-        body: JSON.stringify(editingEmployee)
+        body: JSON.stringify(payload)
       });
       if (response.ok) {
         fetchData();
@@ -1681,6 +1713,11 @@ const AdminDashboard = () => {
                 <line x1="17" y1="11" x2="23" y2="11" />
               </svg>
               Add Employee
+            </button>
+          )}
+          {['admin', 'super-admin', 'hr-admin'].includes(loggedAdmin?.role) && (
+            <button className="btn-add-employee" style={{ marginTop: 8, opacity: faceRebuild ? 0.7 : 1 }} disabled={!!faceRebuild} onClick={handleRebuildFaceData}>
+              {faceRebuild ? `Rebuilding face data ${faceRebuild.done}/${faceRebuild.total}` : 'Rebuild Face Data'}
             </button>
           )}
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../../config';
 import { compressImage } from '../../utils/imageCompression';
+import { scanFields } from '../../face/faceEngine';
 import './dashboard.css';
 import '../history/history.css'; // import to share unified navbar styles
 import { Geolocation } from '@capacitor/geolocation';
@@ -219,7 +220,7 @@ const Dashboard = () => {
       const response = await fetch(`${API_BASE_URL}/api/verify-face`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ employeeId: employee.employeeId, frameB: frameData })
+        body: JSON.stringify({ employeeId: employee.employeeId, ...(await scanFields(frameData)) })
       });
       const data = await response.json();
       if (response.ok) {

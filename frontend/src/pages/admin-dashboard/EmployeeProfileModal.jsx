@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../../config';
 import { compressImage } from '../../utils/imageCompression';
+import { rebuildEmployeeFace } from '../../face/faceEngine';
 
 const EmployeeProfileModal = ({ 
   employee, 
@@ -191,6 +192,12 @@ const EmployeeProfileModal = ({
     }
 
     if (successCount > 0) {
+      try {
+        await rebuildEmployeeFace(API_BASE_URL, empId, fetchWithAuth, { 'x-user-role': currentUserRole });
+      } catch (faceErr) {
+        console.error('Face data update failed', faceErr);
+        alert('Photos saved, but face data could not be updated: ' + faceErr.message);
+      }
       alert(`${successCount} photo(s) uploaded successfully!`);
       fetchProfile();
       fetchPhotos();
@@ -211,6 +218,11 @@ const EmployeeProfileModal = ({
         headers: { 'x-user-role': currentUserRole }
       });
       if (res.ok) {
+        try {
+          await rebuildEmployeeFace(API_BASE_URL, empId, fetchWithAuth, { 'x-user-role': currentUserRole });
+        } catch (faceErr) {
+          console.error('Face data update failed', faceErr);
+        }
         fetchProfile();
       } else {
         alert('Failed to delete photo');

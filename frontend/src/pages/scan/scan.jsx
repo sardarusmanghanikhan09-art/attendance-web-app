@@ -4,10 +4,13 @@ import { API_BASE_URL } from '../../config';
 import Clock from '../../utils/Clock';
 import { Geolocation } from '@capacitor/geolocation';
 import { useOfflineSync } from '../../utils/OfflineSyncProvider';
+import { preloadFaceModels, scanFields } from '../../face/faceEngine';
 import './scan.css';
 
 const Scan = () => {
   const navigate = useNavigate();
+  // Start downloading the on-device face models as soon as the scan page opens
+  useEffect(() => { preloadFaceModels(); }, []);
   const location = useLocation();
   const { isOnline, saveOfflineRequest } = useOfflineSync();
   const [loggedEmployee, setLoggedEmployee] = useState(null);
@@ -396,7 +399,8 @@ const Scan = () => {
         reader.readAsDataURL(blob);
       });
 
-      const frameABase64 = await toBase64(blobA);
+      // Face recognition + liveness run on this device; only the embedding goes to the server
+      const faceFields = await scanFields(blobA, blobB);
       const frameBBase64 = await toBase64(blobB);
 
       const resolvedEmployeeId = (location.state && location.state.employeeId) || (loggedEmployee ? loggedEmployee.employeeId : (manualEmployeeId.trim() || null));
@@ -405,7 +409,7 @@ const Scan = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          frameA: frameABase64,
+          ...faceFields,
           frameB: frameBBase64,
           token,
           timestamp,

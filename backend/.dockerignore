@@ -4,3 +4,6 @@ node_modules
 mongod.log*
 attendance_backup.json
 data
+# Python face service and ONNX models are no longer used by the server
+*.py
+models/*.onnx

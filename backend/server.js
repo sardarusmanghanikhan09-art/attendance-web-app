@@ -17,7 +17,6 @@ const supabase = null;
 const OfficeSettings = require('./models/OfficeSettings');
 const Holiday = require('./models/Holiday');
 const path = require('path');
-const { spawn } = require('child_process');
 
 require('dotenv').config();
 
@@ -138,83 +137,38 @@ if (!JWT_SECRET) {
   process.exit(1);
 }
 
-const http = require('http');
+// Face recognition runs on the user's device (frontend/src/face). The client sends a 512-d,
+// L2-normalised embedding (and a liveness score for live scans); the server only validates and matches.
+const FACE_EMBEDDING_DIM = 512;
+const FACE_MATCH_THRESHOLD = Number(process.env.FACE_MATCH_THRESHOLD || 0.40);
+// MiniFASNet "real face" probability required for live scans. Set LIVENESS_MIN=0 to switch the check off.
+const LIVENESS_MIN = Number(process.env.LIVENESS_MIN ?? 0.35);
 
-const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-async function extractEmbedding(facePhotoB64, retries = 3) {
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      return await new Promise((resolve, reject) => {
-        const payload = JSON.stringify({ facePhoto: facePhotoB64 });
-
-        let requestOptions;
-        let client = http;
-
-        const faceServiceUrl = process.env.FACE_SERVICE_URL || 'http://127.0.0.1:5001/extract';
-        
-        if (faceServiceUrl) {
-          try {
-            const parsedUrl = new URL(faceServiceUrl);
-            client = parsedUrl.protocol === 'https:' ? https : http;
-            requestOptions = {
-              hostname: parsedUrl.hostname,
-              port: parsedUrl.port || (parsedUrl.protocol === 'https:' ? 443 : 80),
-              path: parsedUrl.pathname + parsedUrl.search,
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Content-Length': Buffer.byteLength(payload)
-              }
-            };
-          } catch (urlErr) {
-            return reject(new Error('Invalid FACE_SERVICE_URL configured: ' + urlErr.message));
-          }
-        }
-
-        const req = client.request(requestOptions, (res) => {
-          let body = '';
-          res.on('data', chunk => body += chunk);
-          res.on('end', () => {
-            if (res.statusCode === 200) {
-              try {
-                const data = JSON.parse(body);
-                if (data.embedding) return resolve(data.embedding);
-                return reject(new Error(data.error || data.detail || 'Failed to extract embedding'));
-              } catch (e) {
-                return reject(new Error('JSON parse error from face service'));
-              }
-            } else {
-              try {
-                const data = JSON.parse(body);
-                // If it's a 400 error (like spoofing detected), do NOT retry. Bubble up immediately.
-                if (res.statusCode === 400) {
-                  return reject(new Error(data.error || data.detail || 'Face validation failed'));
-                }
-                return reject(new Error(data.error || data.detail || `HTTP error ${res.statusCode}`));
-              } catch (_) {
-                return reject(new Error(`Face service returned HTTP ${res.statusCode}`));
-              }
-            }
-          });
-        });
-
-        req.on('error', (err) => reject(err));
-        req.write(payload);
-        req.end();
-      });
-    } catch (err) {
-      // If it's a validation error (e.g. Spoofing), don't retry, just throw.
-      if (err.message.includes('Spoofing') || err.message.includes('No face detected') || err.message.includes('validation failed')) {
-        throw err;
-      }
-      if (attempt === retries) {
-        throw new Error('Face scan service is currently offline or busy. Please try again in a moment or use the password option.');
-      }
-      console.warn(`[FaceService] Request failed (attempt ${attempt}/${retries}): ${err.message}. Retrying in 1.5s...`);
-      await wait(1500);
-    }
+function readClientEmbedding(body) {
+  const emb = body && body.faceEmbedding;
+  if (!Array.isArray(emb) || emb.length !== FACE_EMBEDDING_DIM || !emb.every(v => typeof v === 'number' && Number.isFinite(v))) {
+    throw new Error('Face data missing or invalid. Please update or reload the app and try again.');
   }
+  const norm = Math.sqrt(emb.reduce((s, v) => s + v * v, 0));
+  if (norm < 1e-6) throw new Error('Face data missing or invalid. Please update or reload the app and try again.');
+  return emb.map(v => v / norm);
+}
+
+// For live scans (attendance, verification): also enforce the client-side liveness score
+function readLiveScan(body) {
+  const emb = readClientEmbedding(body);
+  const liveness = Number(body.liveness);
+  if (LIVENESS_MIN > 0 && !(liveness >= LIVENESS_MIN)) {
+    throw new Error('Spoofing detected: please scan your real face, not a photo or screen.');
+  }
+  return emb;
+}
+
+function cosineSimilarity(a, b) {
+  if (!a || !b || a.length !== b.length) return 0;
+  let s = 0;
+  for (let i = 0; i < a.length; i++) s += a[i] * b[i];
+  return s;
 }
 
 const app = express();
@@ -526,8 +480,7 @@ app.post('/api/scan-attendance', async (req, res) => {
 
     let queryEmbedding;
     try {
-      const framesInput = (frameA && frameB) ? [frameA, frameB] : frameB;
-      queryEmbedding = await extractEmbedding(framesInput);
+      queryEmbedding = readLiveScan(req.body);
     } catch (err) {
       console.error('Failed to extract face embedding on scan:', err);
       return res.status(400).json({ error: err.message || 'Biometric verification failed' });
@@ -548,10 +501,10 @@ app.post('/api/scan-attendance', async (req, res) => {
         return res.status(400).json({ error: 'Biometric profile not configured for your account.' });
       }
 
-      const similarity = queryEmbedding.reduce((sum, val, idx) => sum + val * emp.faceEmbedding[idx], 0);
+      const similarity = cosineSimilarity(queryEmbedding, emp.faceEmbedding);
       highestSimilarity = similarity;
 
-      if (similarity >= 0.40) {
+      if (similarity >= FACE_MATCH_THRESHOLD) {
         matchedEmployee = emp;
       } else {
         return res.status(403).json({ error: `Face verification failed: Biometrics do not match your profile (${(similarity * 100).toFixed(1)}%)` });
@@ -559,10 +512,10 @@ app.post('/api/scan-attendance', async (req, res) => {
     } else {
       // BLAZING FAST CACHE LOOKUP
       for (const emp of employeeFaceCache) {
-        const similarity = queryEmbedding.reduce((sum, val, idx) => sum + val * emp.faceEmbedding[idx], 0);
+        const similarity = cosineSimilarity(queryEmbedding, emp.faceEmbedding);
         if (similarity > highestSimilarity) {
           highestSimilarity = similarity;
-          if (similarity >= 0.40) {
+          if (similarity >= FACE_MATCH_THRESHOLD) {
             matchedEmployee = emp;
           }
         }
@@ -1230,7 +1183,7 @@ app.post('/api/employees', requireRole(['admin', 'super-admin', 'hr-admin', 'sub
 
     let embedding;
     try {
-      embedding = await extractEmbedding(facePhotos);
+      embedding = readClientEmbedding(req.body);
     } catch (err) {
       console.error('Failed to extract face embedding:', err);
       return res.status(400).json({ error: 'Biometric verification setup failed: ' + err.message });
@@ -1875,7 +1828,7 @@ app.put('/api/employees/:employeeId', requireRole(['admin', 'super-admin', 'hr-a
     let embedding = null;
     if (facePhotos && facePhotos.length > 0) {
       try {
-        embedding = await extractEmbedding(facePhotos);
+        embedding = readClientEmbedding(req.body);
       } catch (err) {
         console.error('Failed to extract face embedding on update:', err);
         return res.status(400).json({ error: 'Biometric update failed: ' + err.message });
@@ -2056,7 +2009,7 @@ app.put('/api/employees/:employeeId/profile', async (req, res) => {
     let embedding = null;
     if (facePhotos && facePhotos.length >= 4) {
       try {
-        embedding = await extractEmbedding(facePhotos);
+        embedding = readClientEmbedding(req.body);
       } catch (err) {
         console.error('Failed to extract face embedding on update:', err);
         return res.status(400).json({ error: 'Biometric update failed: ' + err.message });
@@ -2113,6 +2066,32 @@ app.put('/api/employees/:employeeId/profile', async (req, res) => {
   }
 });
 
+
+// Replace an employee's face embedding (used by the admin "Rebuild face data" action, which
+// recomputes embeddings on the admin's device from the stored photos)
+app.put('/api/employees/:employeeId/face-embedding', requireRole(['admin', 'super-admin', 'hr-admin', 'sub-admin']), async (req, res) => {
+  try {
+    let embedding;
+    try {
+      embedding = readClientEmbedding(req.body);
+    } catch (err) {
+      return res.status(400).json({ error: err.message });
+    }
+    const employee = await Employee.findOne({ employeeId: req.params.employeeId.trim() });
+    if (!employee) return res.status(404).json({ error: 'Employee not found' });
+    if (req.user.role === 'sub-admin' && employee.department !== req.user.department) {
+      return res.status(403).json({ error: 'Sub-admins can only update employees in their own branch.' });
+    }
+    employee.faceEmbedding = embedding;
+    await employee.save();
+    await refreshFaceCache();
+    res.json({ message: 'Face data updated' });
+  } catch (err) {
+    console.error('Update face embedding error:', err);
+    res.status(500).json({ error: 'Server error updating face data' });
+  }
+});
+
 // 13.5.1 Add an employee photo (Admin or Self)
 app.post('/api/employees/:employeeId/photos', requireRole(['admin', 'super-admin', 'hr-admin', 'sub-admin']), async (req, res) => {
   try {
@@ -2126,10 +2105,10 @@ app.post('/api/employees/:employeeId/photos', requireRole(['admin', 'super-admin
 
     employee.facePhotos.push(photo);
     
-    // Recompute embedding if they have at least 4 photos
-    if (employee.facePhotos.length >= 4) {
+    // The admin's device recomputes the embedding after uploading (PUT /face-embedding); accept one here if sent
+    if (employee.facePhotos.length >= 4 && req.body.faceEmbedding) {
       try {
-        const embedding = await extractEmbedding(employee.facePhotos);
+        const embedding = readClientEmbedding(req.body);
         employee.faceEmbedding = embedding;
       } catch (err) {
         console.error('Failed to extract face embedding on photo add:', err);
@@ -2176,13 +2155,14 @@ app.delete('/api/employees/:employeeId/photos/:index', requireRole(['admin', 'su
 
     employee.facePhotos.splice(idx, 1);
     
-    // Recompute embedding if they still have at least 4 photos, otherwise clear it
+    // With 4+ photos left the admin's device recomputes the embedding (PUT /face-embedding); otherwise clear it
     if (employee.facePhotos.length >= 4) {
-      try {
-        const embedding = await extractEmbedding(employee.facePhotos);
-        employee.faceEmbedding = embedding;
-      } catch (err) {
-        console.error('Failed to extract face embedding on photo delete:', err);
+      if (req.body && req.body.faceEmbedding) {
+        try {
+          employee.faceEmbedding = readClientEmbedding(req.body);
+        } catch (err) {
+          console.error('Invalid face embedding on photo delete:', err.message);
+        }
       }
     } else {
        employee.faceEmbedding = [];
@@ -2235,16 +2215,15 @@ app.post('/api/employees/:employeeId/unlock-credentials', requireRole(['admin', 
     // 1. Extract embedding and perform liveness verification
     let queryEmbedding;
     try {
-      const framesInput = (frameA && frameB) ? [frameA, frameB] : frameB;
-      queryEmbedding = await extractEmbedding(framesInput);
+      queryEmbedding = readLiveScan(req.body);
     } catch (err) {
       console.error('Failed to extract face embedding on unlock:', err);
       return res.status(400).json({ error: 'Biometric verification failed: ' + err.message });
     }
 
     // 2. Perform Biometric Verification Match
-    const similarity = queryEmbedding.reduce((sum, val, idx) => sum + val * employee.faceEmbedding[idx], 0);
-    const matchThreshold = 0.40; // match threshold same as scan-attendance
+    const similarity = cosineSimilarity(queryEmbedding, employee.faceEmbedding);
+    const matchThreshold = FACE_MATCH_THRESHOLD;
 
     if (similarity >= matchThreshold) {
       return res.json({
@@ -2638,37 +2617,6 @@ app.get('/health', (req, res) => {
 app.get('/goal', (req, res) => {
   res.json({ message: 'Goal endpoint is active' });
 });
-// Start the face recognition microservice daemon in the background
-let faceServiceProcess = null;
-function startFaceService() {
-  if (process.env.FACE_SERVICE_URL) {
-    console.log(`[FaceService] Bypassing background Python daemon. Using external API: ${process.env.FACE_SERVICE_URL}`);
-    return;
-  }
-  const pythonPath = process.platform === 'win32' ? 'py' : 'python3';
-  const scriptPath = path.join(__dirname, 'face_service.py');
-
-  console.log('[FaceService] Starting Python biometric daemon...');
-  try {
-    faceServiceProcess = spawn(pythonPath, [scriptPath]);
-
-    faceServiceProcess.stdout.on('data', (data) => {
-      console.log(`[FaceService Output]: ${data.toString().trim()}`);
-    });
-
-    faceServiceProcess.stderr.on('data', (data) => {
-      console.error(`[FaceService Error]: ${data.toString().trim()}`);
-    });
-
-    faceServiceProcess.on('close', (code) => {
-      console.warn(`[FaceService] Daemon exited with code ${code}. Restarting in 5 seconds...`);
-      setTimeout(startFaceService, 5000);
-    });
-  } catch (err) {
-    console.error('[FaceService] Failed to start Python process:', err);
-  }
-}
-
 // Auto-Checkout Routine
 async function performAutoCheckouts() {
   // Disabled as per requirements. Employees must manually check out, or their hours stay at 0.0.
@@ -2692,12 +2640,16 @@ app.post('/api/admin/verify-face-for-password', requireRole(['admin', 'super-adm
     if (!admin || !admin.faceEmbedding || admin.faceEmbedding.length === 0) {
       return res.status(400).json({ error: 'Admin biometric profile not found.' });
     }
-    const framesInput = (frameA && frameB) ? [frameA, frameB] : frameB;
-    const queryEmbedding = await extractEmbedding(framesInput);
+    let queryEmbedding;
+    try {
+      queryEmbedding = readLiveScan(req.body);
+    } catch (err) {
+      return res.status(400).json({ error: err.message });
+    }
     if (!queryEmbedding) return res.status(400).json({ error: 'No face detected.' });
 
-    const similarity = queryEmbedding.reduce((sum, val, idx) => sum + val * admin.faceEmbedding[idx], 0);
-    if (similarity >= 0.40) {
+    const similarity = cosineSimilarity(queryEmbedding, admin.faceEmbedding);
+    if (similarity >= FACE_MATCH_THRESHOLD) {
       const targetEmp = await Employee.findOne({ employeeId: targetEmployeeId });
       if (!targetEmp) return res.status(404).json({ error: 'Target employee not found.' });
 
@@ -2888,8 +2840,6 @@ app.post('/api/holidays/import', requireRole(['admin', 'super-admin', 'hr-admin'
 if (!process.env.VERCEL) {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
-    // Start the background face service
-    startFaceService();
     // Start auto-checkout job on startup
     performAutoCheckouts();
     // Run auto-checkout job every minute
@@ -2908,12 +2858,16 @@ app.post('/api/verify-face', async (req, res) => {
 
     // We skip signature check for simplicity in pure verification, or we can use it.
     // For pure verification, we just extract embedding and match.
-    const framesInput = (frameA && frameB) ? [frameA, frameB] : frameB;
-    const queryEmbedding = await extractEmbedding(framesInput);
+    let queryEmbedding;
+    try {
+      queryEmbedding = readLiveScan(req.body);
+    } catch (err) {
+      return res.status(400).json({ error: err.message });
+    }
     if (!queryEmbedding || queryEmbedding.length === 0) {
       return res.status(400).json({ error: 'Could not detect face in provided frames. Please try again.' });
     }
-    const isMatch = compareEmbeddings(queryEmbedding, employee.faceEmbedding);
+    const isMatch = cosineSimilarity(queryEmbedding, employee.faceEmbedding) >= FACE_MATCH_THRESHOLD;
     if (!isMatch) {
       return res.status(401).json({ error: 'Face verification failed' });
     }
