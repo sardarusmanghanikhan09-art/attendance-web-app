@@ -23,7 +23,7 @@ const Login = () => {
 
     const validateForm = () => {
         const newErrors = {};
-        if (!formData.employeeId.trim()) newErrors.employeeId = 'Employee ID is required';
+        if (!formData.employeeId.trim()) newErrors.employeeId = 'Email is required';
         if (!formData.password) newErrors.password = 'Password is required';
 
         setErrors(newErrors);
@@ -42,7 +42,8 @@ const Login = () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    employeeId: formData.employeeId,
+                    // The server accepts an email or, for older accounts, an Employee ID
+                    email: formData.employeeId.trim(),
                     password: formData.password
                 })
             });
@@ -143,12 +144,16 @@ const Login = () => {
 
                 <form onSubmit={handleSubmit} className="login-form">
                     <div className="form-group">
-                        <label htmlFor="employeeId">Employee ID</label>
+                        <label htmlFor="employeeId">Email</label>
                         <input
                             type="text"
+                            inputMode="email"
+                            autoComplete="username"
+                            autoCapitalize="none"
+                            spellCheck={false}
                             id="employeeId"
                             name="employeeId"
-                            placeholder="e.g. EMP-1042"
+                            placeholder="you@company.com"
                             value={formData.employeeId}
                             onChange={handleChange}
                             disabled={isSubmitting}

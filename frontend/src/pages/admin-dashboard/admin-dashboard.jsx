@@ -832,6 +832,7 @@ const AdminDashboard = () => {
         fetchData();
         setNewEmployee({
           name: '',
+          email: '',
           department: '',
           password: '',
           facePhotos: [],
@@ -3082,7 +3083,7 @@ const AdminDashboard = () => {
             <div className="modal-header">
               <h2>Add New Employee</h2>
               <button className="btn-close-modal" onClick={() => {
-                setNewEmployee({ name: '', department: '', password: '', facePhotos: [], role: 'employee' });
+                setNewEmployee({ name: '', email: '', department: '', password: '', facePhotos: [], role: 'employee' });
                 const fileInput = document.getElementById('add-employee-file-input');
                 if (fileInput) fileInput.value = '';
                 setShowAddModal(false);
@@ -3102,6 +3103,17 @@ const AdminDashboard = () => {
                   required
                   value={newEmployee.name}
                   onChange={(e) => setNewEmployee(prev => ({ ...prev, name: e.target.value }))}
+                />
+              </div>
+              <div className="form-group">
+                <label>Email (used to log in)</label>
+                <input
+                  type="email"
+                  placeholder="e.g. sarah@company.com"
+                  required
+                  autoComplete="off"
+                  value={newEmployee.email || ''}
+                  onChange={(e) => setNewEmployee(prev => ({ ...prev, email: e.target.value }))}
                 />
               </div>
               <div className="form-group">
@@ -3347,7 +3359,7 @@ const AdminDashboard = () => {
               </div>
               <div className="modal-footer-buttons">
                 <button type="button" className="btn-modal-cancel" onClick={() => {
-                  setNewEmployee({ name: '', department: '', password: '', facePhotos: [], role: 'employee' });
+                  setNewEmployee({ name: '', email: '', department: '', password: '', facePhotos: [], role: 'employee' });
                   const fileInput = document.getElementById('add-employee-file-input');
                   if (fileInput) fileInput.value = '';
                   setShowAddModal(false);
@@ -3380,6 +3392,15 @@ const AdminDashboard = () => {
                   required
                   value={editingEmployee.name}
                   onChange={(e) => setEditingEmployee(prev => ({ ...prev, name: e.target.value }))}
+                />
+              </div>
+              <div className="form-group">
+                <label>Email (used to log in)</label>
+                <input
+                  type="email"
+                  placeholder="e.g. sarah@company.com"
+                  value={editingEmployee.email || ''}
+                  onChange={(e) => setEditingEmployee(prev => ({ ...prev, email: e.target.value }))}
                 />
               </div>
               <div className="form-group">

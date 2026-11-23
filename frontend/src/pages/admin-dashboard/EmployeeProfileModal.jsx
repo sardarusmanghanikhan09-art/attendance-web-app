@@ -26,6 +26,7 @@ const EmployeeProfileModal = ({
   // Edit forms state for Profile Details
   const [editDetails, setEditDetails] = useState({
     name: employee.name || '',
+    email: employee.email || '',
     department: employee.department || '',
     isActive: employee.isActive !== false,
     employeeType: employee.employeeType || 'employee',
@@ -161,7 +162,9 @@ const EmployeeProfileModal = ({
         if (onUpdate) onUpdate();
         fetchProfile();
       } else {
-        alert('Failed to update profile');
+        let msg = 'Failed to update profile';
+        try { msg = (await res.json()).error || msg; } catch { /* keep default */ }
+        alert(msg);
       }
     } catch (err) {
       console.error('Update failed', err);
@@ -517,6 +520,17 @@ const EmployeeProfileModal = ({
                     value={editDetails.name} 
                     onChange={e => setEditDetails({...editDetails, name: e.target.value})} 
                     required 
+                  />
+                </div>
+
+                <div className="beauty-field-card">
+                  <label>Email (used to log in)</label>
+                  <input 
+                    type="email" 
+                    className="beauty-input" 
+                    placeholder="e.g. sarah@company.com"
+                    value={editDetails.email} 
+                    onChange={e => setEditDetails({...editDetails, email: e.target.value})} 
                   />
                 </div>
 
