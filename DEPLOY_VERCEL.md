@@ -40,7 +40,8 @@ git push
 | `CRON_SECRET` | second secret from step 2 |
 | `ADMIN_USERNAME` | `usman.ghani` |
 | `ADMIN_PASSWORD` | your admin password |
-| `NODE_ENV` | `production` |
+
+Do not add `NODE_ENV`: Vercel sets it for the API itself, and setting it for the build skips the tools needed to build the website.
 
 4. **Deploy**. When it finishes you get an address like `https://attendance-web-app-xxxx.vercel.app`.
 
