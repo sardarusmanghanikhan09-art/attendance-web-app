@@ -8,6 +8,7 @@ import DepartmentDeleteModal from './DepartmentDeleteModal';
 import EmployeeProfileModal from './EmployeeProfileModal';
 import HolidayModal from './HolidayModal';
 import { enrollmentFields, scanFields, rebuildEmployeeFace } from '../../face/faceEngine';
+import WebcamCapture from '../../components/WebcamCapture';
 
 const fetchWithAuth = async (url, options = {}) => {
   const token = localStorage.getItem('adminToken');
@@ -781,6 +782,7 @@ const AdminDashboard = () => {
   // Recompute every employee's face data on this device from their stored photos.
   // Needed once after moving recognition on-device, because older embeddings may come from a different model.
   const [faceRebuild, setFaceRebuild] = useState(null);
+  const [webcamTarget, setWebcamTarget] = useState(null); // 'add' | 'edit' while the webcam popup is open
   const handleRebuildFaceData = async () => {
     if (faceRebuild) return;
     if (!window.confirm(`Rebuild face data for ${employees.length} employees from their stored photos? Keep this tab open until it finishes.`)) return;
@@ -3249,13 +3251,13 @@ const AdminDashboard = () => {
               </div>
 
               <div className="form-group">
-                <label>Face Photos (Select exactly 4 or 5 pictures)</label>
+                <label>Face Photos (Select exactly 4 or 5 pictures, or take them with the webcam)</label>
                 <input
                   type="file"
                   id="add-employee-file-input"
                   accept="image/*"
                   multiple
-                  required
+                  required={!newEmployee.facePhotos || newEmployee.facePhotos.length === 0}
                   onChange={(e) => {
                     const files = Array.from(e.target.files);
                     if (files.length < 4 || files.length > 5) {
@@ -3276,6 +3278,14 @@ const AdminDashboard = () => {
                     backgroundColor: '#ffffff'
                   }}
                 />
+                <button
+                  type="button"
+                  onClick={() => setWebcamTarget('add')}
+                  style={{ marginTop: '8px', padding: '8px 14px', borderRadius: '8px', border: '1px solid #2563eb', background: '#eff6ff', color: '#1d4ed8', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                  Or use webcam
+                </button>
                 {newEmployee.facePhotos && newEmployee.facePhotos.length > 0 && (
                   <div style={{ marginTop: '12px' }}>
                     <span style={{ fontSize: '12px', fontWeight: '600', color: '#64748b', display: 'block', marginBottom: '6px' }}>
@@ -3581,7 +3591,7 @@ const AdminDashboard = () => {
               </div>
 
               <div className="form-group">
-                <label>Face Photos (Select exactly 4 or 5 to update biometrics)</label>
+                <label>Face Photos (Select exactly 4 or 5 to update biometrics, or use the webcam)</label>
                 <input
                   type="file"
                   accept="image/*"
@@ -3605,6 +3615,14 @@ const AdminDashboard = () => {
                     backgroundColor: '#ffffff'
                   }}
                 />
+                <button
+                  type="button"
+                  onClick={() => setWebcamTarget('edit')}
+                  style={{ marginTop: '8px', padding: '8px 14px', borderRadius: '8px', border: '1px solid #2563eb', background: '#eff6ff', color: '#1d4ed8', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                  Or use webcam
+                </button>
                 {editingEmployee.facePhotos && editingEmployee.facePhotos.length > 0 && (
                   <div style={{ marginTop: '12px' }}>
                     <span style={{ fontSize: '12px', fontWeight: '600', color: '#64748b', display: 'block', marginBottom: '6px' }}>
@@ -4363,6 +4381,20 @@ const AdminDashboard = () => {
           transition: 'all 0.1s ease'
         }} />
       )}
+
+      <WebcamCapture
+        open={webcamTarget !== null}
+        onClose={() => setWebcamTarget(null)}
+        onDone={(photos) => {
+          if (webcamTarget === 'add') {
+            const input = document.getElementById('add-employee-file-input');
+            if (input) input.value = null;
+            setNewEmployee(prev => ({ ...prev, facePhotos: photos }));
+          } else if (webcamTarget === 'edit') {
+            setEditingEmployee(prev => ({ ...prev, facePhotos: photos }));
+          }
+        }}
+      />
     </div>
   );
 };

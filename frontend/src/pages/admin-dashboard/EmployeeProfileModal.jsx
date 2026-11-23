@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../../config';
 import { compressImage } from '../../utils/imageCompression';
 import { rebuildEmployeeFace } from '../../face/faceEngine';
+import WebcamCapture from '../../components/WebcamCapture';
 
 const EmployeeProfileModal = ({ 
   employee, 
@@ -16,6 +17,7 @@ const EmployeeProfileModal = ({
   const [loading, setLoading] = useState(false);
   const [profileData, setProfileData] = useState(null);
   const [biometricPhotos, setBiometricPhotos] = useState(null);
+  const [webcamOpen, setWebcamOpen] = useState(false);
   const [attendanceLogs, setAttendanceLogs] = useState([]);
   const [calendarMonth, setCalendarMonth] = useState(new Date());
   const [officeSettings, setOfficeSettings] = useState(null);
@@ -171,7 +173,12 @@ const EmployeeProfileModal = ({
   const handlePhotoUpload = async (e) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-    
+    await uploadPhotos(Array.from(files));
+    e.target.value = null;
+  };
+
+  // Accepts File/Blob objects or already-compressed data URLs (from the webcam popup)
+  const uploadPhotos = async (files) => {
     setLoading(true);
     let successCount = 0;
     const empId = employee.employeeId || employee.id;
@@ -179,7 +186,7 @@ const EmployeeProfileModal = ({
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       try {
-        const compressedBase64 = await compressImage(file, 500, 0.7);
+        const compressedBase64 = typeof file === 'string' ? file : await compressImage(file, 500, 0.7);
         const res = await fetchWithAuth(`${API_BASE_URL}/api/employees/${encodeURIComponent(empId)}/photos`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-user-role': currentUserRole },
@@ -788,6 +795,10 @@ const EmployeeProfileModal = ({
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     {loading ? 'Uploading...' : 'Upload Face Snapshot'}
                   </label>
+                  <button type="button" className="beauty-primary-btn" onClick={() => setWebcamOpen(true)} disabled={loading} style={{ cursor: loading ? 'not-allowed' : 'pointer' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                    Use Webcam
+                  </button>
                 </div>
               </div>
 
@@ -974,6 +985,13 @@ const EmployeeProfileModal = ({
           )}
         </div>
       </div>
+      <WebcamCapture
+        open={webcamOpen}
+        onClose={() => setWebcamOpen(false)}
+        minShots={Math.max(1, 4 - (biometricPhotos?.length || 0))}
+        maxShots={5}
+        onDone={(photos) => { uploadPhotos(photos); }}
+      />
     </div>
   );
 };
