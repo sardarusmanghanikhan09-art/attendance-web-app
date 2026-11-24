@@ -154,21 +154,27 @@ const AdminDashboard = () => {
     setIsSearchingAddress(true);
 
     let queryToParse = addressSearchQuery.trim();
+    let parsedLat = null, parsedLon = null;
+    let placeQuery = null; // place name from a maps link that carries no coordinates
 
-    // Resolve any URLs (Google Maps shortlinks, maps links, goo.gl, etc.) dynamically via backend
-    if (queryToParse.startsWith('http://') || queryToParse.startsWith('https://') || queryToParse.toLowerCase().includes('maps') || queryToParse.toLowerCase().includes('goo.gl')) {
+    // Google Maps links (including maps.app.goo.gl short links) are resolved on the server,
+    // which follows the redirects and returns the coordinates when it can find them
+    if (/^https?:\/\//i.test(queryToParse)) {
       try {
         const resolveRes = await fetch(`${API_BASE_URL}/api/resolve-shortlink?url=${encodeURIComponent(queryToParse)}`);
         if (resolveRes.ok) {
           const resolveData = await resolveRes.json();
+          if (typeof resolveData.lat === 'number' && typeof resolveData.lng === 'number') {
+            parsedLat = resolveData.lat;
+            parsedLon = resolveData.lng;
+          }
           if (resolveData.url) queryToParse = resolveData.url;
+          if (resolveData.query) placeQuery = resolveData.query;
         }
       } catch (e) {
         console.error('Error resolving shortlink:', e);
       }
     }
-
-    let parsedLat = null, parsedLon = null;
 
     // Pattern 1: /search/lat,+lng or /place/lat,+lng or /dir/lat,+lng
     const searchPlaceRegex = /(?:search|place|dir)\/(-?\d+\.?\d*)[,\s+]+(-?\d+\.?\d*)/i;
@@ -189,12 +195,14 @@ const AdminDashboard = () => {
     const qParamMatch = queryToParse.match(qParamRegex);
     const rawCoordsMatch = queryToParse.match(rawCoordsRegex);
 
-    if (searchPlaceMatch) {
+    if (parsedLat !== null && parsedLon !== null) {
+      // already resolved by the server
+    } else if (searchPlaceMatch) {
       parsedLat = parseFloat(searchPlaceMatch[1]);
       parsedLon = parseFloat(searchPlaceMatch[2]);
     } else if (pinLatMatch && pinLonMatch) {
       parsedLat = parseFloat(pinLatMatch[1]);
-      parsedLon = parseFloat(pinLonMatch[2]);
+      parsedLon = parseFloat(pinLonMatch[1]);
     } else if (gmapsCenterMatch) {
       parsedLat = parseFloat(gmapsCenterMatch[1]);
       parsedLon = parseFloat(gmapsCenterMatch[2]);
@@ -229,7 +237,7 @@ const AdminDashboard = () => {
 
     // Fallback: If not recognized as coordinate URL, search via Nominatim text geocoding API
     try {
-      let searchQuery = queryToParse;
+      let searchQuery = placeQuery || queryToParse;
       if (searchQuery.includes('/search/')) {
         searchQuery = searchQuery.split('/search/')[1]?.split('?')[0]?.replace(/\+/g, ' ') || searchQuery;
       }

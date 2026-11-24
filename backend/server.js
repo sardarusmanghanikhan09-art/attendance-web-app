@@ -2470,18 +2470,97 @@ app.delete('/api/departments/:name', requireRole(['super-admin']), async (req, r
 
 // --- Office Settings Endpoints ---
 
-// Helper endpoint to resolve Google Maps shortlinks (bypassing CORS)
-app.get('/api/resolve-shortlink', async (req, res) => {
-  const shortUrl = req.query.url;
-  if (!shortUrl) return res.status(400).json({ error: 'URL is required' });
+// --- Google Maps link resolver (bypasses CORS for the Office Settings location box) ---
+// Follows short links such as maps.app.goo.gl/... and pulls the coordinates out of the final URL,
+// or out of the page itself when the URL only carries a place name (common for links shared from phones).
+const MAPS_HOST_RE = /(^|\.)(goo\.gl|google\.[a-z.]+|g\.co)$/i;
+const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
+
+function validLatLng(lat, lng) {
+  const a = parseFloat(lat), b = parseFloat(lng);
+  if (!isFinite(a) || !isFinite(b) || Math.abs(a) > 90 || Math.abs(b) > 180) return null;
+  if (a === 0 && b === 0) return null;
+  return { lat: a, lng: b };
+}
+
+function coordsFromText(text) {
+  if (!text) return null;
+  let t = text;
+  try { t = decodeURIComponent(text); } catch { /* keep raw */ }
+  const pin = t.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
+  if (pin) return validLatLng(pin[1], pin[2]);
+  const pathPair = t.match(/\/(?:search|place|dir)\/(-?\d+(?:\.\d+)?)\s*,\s*\+?(-?\d+(?:\.\d+)?)/);
+  if (pathPair) return validLatLng(pathPair[1], pathPair[2]);
+  const at = t.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+  if (at) return validLatLng(at[1], at[2]);
+  const param = t.match(/[?&](?:q|query|ll|sll|center|destination|daddr|markers)=(-?\d+(?:\.\d+)?)\s*,\s*\+?(-?\d+(?:\.\d+)?)/);
+  if (param) return validLatLng(param[1], param[2]);
+  return null;
+}
+
+function coordsFromPage(html) {
+  if (!html) return null;
+  const body = html.replace(/\\u003d/g, '=').replace(/\\u0026/g, '&').replace(/&amp;/g, '&');
+  const fromUrls = coordsFromText(body.match(/https?:\/\/[^"'\s<>]*!3d-?\d[^"'\s<>]*/)?.[0])
+    || (() => { const m = body.match(/(?:center|markers)=(-?\d+(?:\.\d+)?)(?:%2C|,)(-?\d+(?:\.\d+)?)/); return m ? validLatLng(m[1], m[2]) : null; })();
+  if (fromUrls) return fromUrls;
+  // The map viewport in the page's initial state: [[[zoom, lng, lat], ...
+  const init = body.match(/APP_INITIALIZATION_STATE=\[\[\[(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)\]/);
+  if (init) return validLatLng(init[3], init[2]);
+  return null;
+}
+
+function placeQueryFromUrl(u) {
   try {
-    const fetchRes = await fetch(shortUrl, { redirect: 'follow' });
-    const finalUrl = fetchRes.url;
-    const location = fetchRes.headers.get('location');
-    res.json({ url: finalUrl || location || shortUrl });
+    const url = new URL(u);
+    const q = url.searchParams.get('q') || url.searchParams.get('query') || url.searchParams.get('destination');
+    if (q) return q;
+    const m = url.pathname.match(/\/(?:place|search)\/([^/@]+)/);
+    if (m) return decodeURIComponent(m[1].replace(/\+/g, ' '));
+  } catch { /* not a URL */ }
+  return null;
+}
+
+app.get('/api/resolve-shortlink', async (req, res) => {
+  const startUrl = String(req.query.url || '').trim();
+  if (!startUrl) return res.status(400).json({ error: 'URL is required' });
+  let current;
+  try { current = new URL(startUrl); } catch { return res.status(400).json({ error: 'Invalid URL' }); }
+
+  try {
+    // Follow redirects by hand so every hop can be checked (and only Google hosts are fetched)
+    let html = '';
+    for (let hop = 0; hop < 6; hop++) {
+      if (!/^https?:$/.test(current.protocol) || !MAPS_HOST_RE.test(current.hostname)) {
+        return res.status(400).json({ error: 'Only Google Maps links are supported' });
+      }
+      const found = coordsFromText(current.href);
+      if (found) return res.json({ url: current.href, ...found });
+
+      const r = await fetch(current.href, {
+        redirect: 'manual',
+        headers: { 'User-Agent': BROWSER_UA, 'Accept-Language': 'en-US,en;q=0.9', Cookie: 'CONSENT=YES+1' },
+        signal: AbortSignal.timeout(8000),
+      });
+      const loc = r.headers.get('location');
+      if (r.status >= 300 && r.status < 400 && loc) {
+        current = new URL(loc, current);
+        // Google's cookie-consent page carries the real address in ?continue=
+        if (/consent\./i.test(current.hostname) && current.searchParams.get('continue')) {
+          current = new URL(current.searchParams.get('continue'));
+        }
+        continue;
+      }
+      html = r.ok ? (await r.text()).slice(0, 2_000_000) : '';
+      break;
+    }
+
+    const fromPage = coordsFromPage(html);
+    if (fromPage) return res.json({ url: current.href, ...fromPage });
+    return res.json({ url: current.href, query: placeQueryFromUrl(current.href) });
   } catch (err) {
-    console.error('Resolve shortlink error:', err);
-    res.status(500).json({ error: 'Failed to resolve link' });
+    console.error('Resolve shortlink error:', err.message);
+    res.status(502).json({ error: 'Failed to resolve link' });
   }
 });
 
