@@ -231,6 +231,29 @@ module.exports = function registerReminderRoutes(app, deps) {
     }
   });
 
+  // Admin "Send test notification": push to one employee's phones, whatever their check-in status
+  app.post('/api/admin/test-notification', requireRole(['admin', 'super-admin', 'hr-admin', 'sub-admin']), async (req, res) => {
+    try {
+      if (!getMessaging()) {
+        return res.status(503).json({ error: `Push is not set up on the server: ${firebaseInitError}. Add FIREBASE_SERVICE_ACCOUNT in Vercel and redeploy.` });
+      }
+      const employeeId = String(req.body.employeeId || '').trim();
+      if (!employeeId) return res.status(400).json({ error: 'Enter an Employee ID' });
+      const emp = await Employee.findOne({ employeeId, isDeleted: { $ne: true } })
+        .select('employeeId name pushTokens').lean();
+      if (!emp) return res.status(404).json({ error: `No employee with ID ${employeeId}` });
+      if (!emp.pushTokens || !emp.pushTokens.length) {
+        return res.status(404).json({ error: `${emp.name} has no phone registered yet. They need to log in once on the new Android app (and allow notifications).` });
+      }
+      const result = await sendToEmployees([emp], 'Test notification',
+        'If you can see this, check-in reminders are working on this phone.');
+      res.json({ ok: true, name: emp.name, phones: emp.pushTokens.length, ...result });
+    } catch (err) {
+      console.error('[Reminders] test notification error:', err);
+      res.status(500).json({ error: 'Server error' });
+    }
+  });
+
   // Admin "Nudge": push everyone (or the given employees) who has not checked in today
   app.post('/api/admin/nudge-checkin', requireRole(['admin', 'super-admin', 'hr-admin', 'sub-admin']), async (req, res) => {
     try {

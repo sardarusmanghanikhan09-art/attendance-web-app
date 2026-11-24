@@ -259,3 +259,49 @@ export async function stopReminders() {
     console.warn('[Reminders] stop failed', err);
   }
 }
+
+/**
+ * "Test notification" from the profile menu: shows a notification on this phone in 5 seconds
+ * (lock the screen or leave the app to see it arrive) and reports what is and isn't set up.
+ */
+export async function sendTestNotification() {
+  if (!isNative()) {
+    return 'Test notifications work in the Android app only.';
+  }
+  const lines = [];
+  let perm = await LocalNotifications.checkPermissions();
+  if (perm.display !== 'granted') perm = await LocalNotifications.requestPermissions();
+  if (perm.display !== 'granted') {
+    return 'Notifications are blocked for this app. Turn them on in Android Settings > Apps > Attendance App > Notifications, then try again.';
+  }
+  await LocalNotifications.createChannel({
+    id: CHANNEL_ID, name: 'Check-in reminders', importance: 5, visibility: 1
+  }).catch(() => {});
+  await LocalNotifications.schedule({
+    notifications: [{
+      id: 999001,
+      title: 'Test notification',
+      body: 'Notifications are working on this phone. Tap to open the scan screen.',
+      channelId: CHANNEL_ID,
+      schedule: { at: new Date(Date.now() + 5000), allowWhileIdle: true },
+      extra: { action: 'open-scan' }
+    }]
+  });
+  lines.push('A test notification will appear in 5 seconds.');
+
+  const { granted } = await CheckinGeofence.checkBackgroundLocation().catch(() => ({ granted: false }));
+  lines.push(granted
+    ? 'Arrival reminder: ON (location "Allow all the time" is on).'
+    : 'Arrival reminder: OFF. To get it, set Location to "Allow all the time" for this app in Android Settings.');
+
+  const { available } = await CheckinGeofence.hasFirebase().catch(() => ({ available: false }));
+  let token = null;
+  try { token = localStorage.getItem(PUSH_TOKEN_KEY); } catch { /* ignore */ }
+  lines.push(!available
+    ? 'Server push: not built into this APK (google-services.json missing).'
+    : token ? 'Server push: this phone is registered.' : 'Server push: not registered yet. Log out and log in again.');
+
+  const owner = getReminderOwner();
+  if (owner) setupReminders(owner); // refresh schedule and push registration
+  return lines.join('\n');
+}

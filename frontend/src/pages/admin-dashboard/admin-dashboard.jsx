@@ -96,6 +96,8 @@ const AdminDashboard = () => {
     reminderDelayMinutes: 15
   });
   const [isNudging, setIsNudging] = useState(false);
+  const [testNotifyEmployeeId, setTestNotifyEmployeeId] = useState('');
+  const [isSendingTest, setIsSendingTest] = useState(false);
   const [holidays, setHolidays] = useState([]);
   const [currentHolidayMonth, setCurrentHolidayMonth] = useState(new Date());
   const [isUpdatingSettings, setIsUpdatingSettings] = useState(false);
@@ -757,6 +759,34 @@ const AdminDashboard = () => {
       alert('Error sending reminders');
     } finally {
       setIsNudging(false);
+    }
+  };
+
+  // Send a test push to one employee's phone to check notifications work end to end
+  const handleTestNotification = async () => {
+    const employeeId = testNotifyEmployeeId.trim();
+    if (!employeeId) { alert('Enter the Employee ID to send the test to.'); return; }
+    setIsSendingTest(true);
+    try {
+      const response = await fetchWithAuth(`${API_BASE_URL}/api/admin/test-notification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-user-role': getAdminRole() },
+        credentials: 'include',
+        body: JSON.stringify({ employeeId })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (response.ok) {
+        alert(data.sent > 0
+          ? `Test notification sent to ${data.name} (${data.sent} of ${data.phones} phone(s)). Check the phone.`
+          : `Firebase could not deliver to ${data.name}'s phone. Ask them to open the app and log in again, then retry.`);
+      } else {
+        alert(data.error || 'Failed to send test notification.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error sending test notification');
+    } finally {
+      setIsSendingTest(false);
     }
   };
 
@@ -2948,6 +2978,23 @@ const AdminDashboard = () => {
                   >
                     {isNudging ? 'Sending...' : 'Remind everyone who has not checked in'}
                   </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <input
+                      type="text"
+                      placeholder="Employee ID"
+                      value={testNotifyEmployeeId}
+                      onChange={(e) => setTestNotifyEmployeeId(e.target.value)}
+                      style={{ width: '160px', padding: '9px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleTestNotification}
+                      disabled={isSendingTest}
+                      style={{ padding: '10px 16px', background: '#ffffff', color: '#2563eb', border: '1px solid #2563eb', borderRadius: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}
+                    >
+                      {isSendingTest ? 'Sending...' : 'Send test notification'}
+                    </button>
+                  </div>
                 </div>
               </div>
 
