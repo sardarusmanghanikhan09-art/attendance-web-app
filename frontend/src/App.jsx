@@ -4,6 +4,7 @@ import { checkAndRequestPermissions } from './utils/permissions';
 import { OfflineSyncProvider } from './utils/OfflineSyncProvider';
 import OfflineBanner from './components/OfflineBanner';
 import ErrorBoundary from './components/ErrorBoundary';
+import ReminderBridge from './components/ReminderBridge';
 import './App.css';
 import Splash from './pages/splash/splash';
 import Selection from './pages/selection/selection';
@@ -34,6 +35,7 @@ function App() {
       {/* Main Container */}
       <main className="app-main">
         <OfflineBanner />
+        <ReminderBridge />
         <ErrorBoundary>
           <Routes>
             <Route path="/" element={<Selection />} />

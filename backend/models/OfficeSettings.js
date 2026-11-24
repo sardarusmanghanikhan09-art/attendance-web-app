@@ -25,6 +25,15 @@ const officeSettingsSchema = new mongoose.Schema({
   saturdayOff: {
     type: Boolean,
     default: false
+  },
+  // Check-in reminder notifications
+  remindersEnabled: {
+    type: Boolean,
+    default: true
+  },
+  reminderDelayMinutes: {
+    type: Number,
+    default: 15
   }
 }, {
   timestamps: true

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { API_BASE_URL } from '../../config';
+import { stopReminders } from '../../utils/reminders';
 import { exportAttendanceReport } from '../../utils/pdfExport';
 import { compressImage } from '../../utils/imageCompression';
 import './history.css';
@@ -366,6 +367,7 @@ const History = () => {
   }, [navigate]);
 
   const handleLogout = () => {
+    stopReminders();
     localStorage.removeItem('employee');
     navigate('/');
   };

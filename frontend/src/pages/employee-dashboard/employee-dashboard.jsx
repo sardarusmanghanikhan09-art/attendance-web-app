@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../../config';
+import { stopReminders } from '../../utils/reminders';
 import Clock from '../../utils/Clock';
 import './employee-dashboard.css';
 
@@ -197,7 +198,7 @@ const EmployeeDashboard = () => {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           <Clock format="timeDate" />
-          <button className="logout-btn" onClick={() => { localStorage.clear(); navigate('/login'); }}>Logout</button>
+          <button className="logout-btn" onClick={() => { stopReminders(); localStorage.clear(); navigate('/login'); }}>Logout</button>
         </div>
       </header>
 

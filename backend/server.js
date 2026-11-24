@@ -661,7 +661,9 @@ app.post('/api/auth/login', async (req, res) => {
           role: mongoEmp.role,
           facePhoto: mongoEmp.facePhoto,
           adminMessage: mongoEmp.adminMessage,
-          isActive: mongoEmp.isActive
+          isActive: mongoEmp.isActive,
+          arrivalTime: mongoEmp.arrivalTime,
+          departureTime: mongoEmp.departureTime
         };
       }
     }
@@ -695,6 +697,8 @@ app.post('/api/auth/login', async (req, res) => {
         facePhoto: employee.facePhoto,
         adminMessage: employee.adminMessage,
         isActive: employee.isActive,
+        arrivalTime: employee.arrivalTime || '09:00 AM',
+        departureTime: employee.departureTime || '05:00 PM',
         plainPassword: password
       }
     });
@@ -2399,6 +2403,12 @@ app.get('/api/cron/auto-absent', async (req, res) => {
   res.json({ ok: true });
 });
 
+// Check-in reminders (push tokens, reminder status for the app, scheduled push, admin nudge)
+require('./reminders')(app, {
+  Employee, Attendance, Holiday, OfficeSettings, requireRole, bcrypt,
+  getNow: getCurrentTimeFromInternetOrLocal, timeToMinutes
+});
+
 // --- Department Endpoints ---
 app.get('/api/departments', async (req, res) => {
   try {
@@ -2827,7 +2837,7 @@ app.get('/api/settings/office', async (req, res) => {
 // POST update office settings
 app.post('/api/settings/office', requireRole(['admin', 'super-admin', 'hr-admin']), async (req, res) => {
   try {
-    const { officeLatitude, officeLongitude, allowedRadius, vpnCheckEnabled, geofenceEnabled, saturdayOff } = req.body;
+    const { officeLatitude, officeLongitude, allowedRadius, vpnCheckEnabled, geofenceEnabled, saturdayOff, remindersEnabled, reminderDelayMinutes } = req.body;
     let settings = await OfficeSettings.findOne();
     if (!settings) {
       settings = new OfficeSettings();
@@ -2838,6 +2848,11 @@ app.post('/api/settings/office', requireRole(['admin', 'super-admin', 'hr-admin'
     settings.vpnCheckEnabled = vpnCheckEnabled !== undefined ? vpnCheckEnabled : settings.vpnCheckEnabled;
     settings.geofenceEnabled = geofenceEnabled !== undefined ? geofenceEnabled : settings.geofenceEnabled;
     settings.saturdayOff = saturdayOff !== undefined ? saturdayOff : settings.saturdayOff;
+    if (remindersEnabled !== undefined) settings.remindersEnabled = !!remindersEnabled;
+    if (reminderDelayMinutes !== undefined && reminderDelayMinutes !== null && reminderDelayMinutes !== '') {
+      const delay = Math.round(Number(reminderDelayMinutes));
+      if (Number.isFinite(delay)) settings.reminderDelayMinutes = Math.min(240, Math.max(0, delay));
+    }
     await settings.save();
     res.json({ message: 'Settings updated successfully', settings });
   } catch (err) {

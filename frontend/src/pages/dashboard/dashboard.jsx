@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../../config';
+import { markCheckedIn, stopReminders } from '../../utils/reminders';
 import { compressImage } from '../../utils/imageCompression';
 import { scanFields } from '../../face/faceEngine';
 import './dashboard.css';
@@ -173,6 +174,7 @@ const Dashboard = () => {
 
   const handleLogout = () => {
     stopCamera();
+    stopReminders();
     localStorage.removeItem('employee');
     navigate('/');
   };
@@ -345,6 +347,7 @@ const Dashboard = () => {
       });
       const data = await response.json();
       if (response.ok) {
+        if (!todayLog || todayLog.checkIn === '--:--') markCheckedIn(employee.employeeId);
         showStatusBanner(data.message, 'success');
         fetchTodayStatus(employee.employeeId);
       } else {

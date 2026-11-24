@@ -93,6 +93,16 @@ const employeeSchema = new mongoose.Schema({
     type: String,
     default: '',
     maxlength: 1000
+  },
+  // Firebase push tokens of the phones this employee is logged in on
+  pushTokens: {
+    type: [String],
+    default: []
+  },
+  // YYYY-MM-DD (Pakistan time) of the last automatic check-in reminder push
+  lastReminderDate: {
+    type: String,
+    default: ''
   }
 }, {
   timestamps: true,

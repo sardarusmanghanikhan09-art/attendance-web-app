@@ -91,8 +91,11 @@ const AdminDashboard = () => {
     officeLongitude: 73.0479,
     allowedRadius: 100,
     vpnCheckEnabled: true,
-    geofenceEnabled: true
+    geofenceEnabled: true,
+    remindersEnabled: true,
+    reminderDelayMinutes: 15
   });
+  const [isNudging, setIsNudging] = useState(false);
   const [holidays, setHolidays] = useState([]);
   const [currentHolidayMonth, setCurrentHolidayMonth] = useState(new Date());
   const [isUpdatingSettings, setIsUpdatingSettings] = useState(false);
@@ -727,6 +730,33 @@ const AdminDashboard = () => {
       }
     } catch (err) {
       console.error('Holiday toggle error', err);
+    }
+  };
+
+  // Push a "please check in" reminder to every employee who has not checked in today
+  const handleNudgeCheckin = async () => {
+    if (!window.confirm('Send a check-in reminder to everyone who has not checked in today?')) return;
+    setIsNudging(true);
+    try {
+      const response = await fetchWithAuth(`${API_BASE_URL}/api/admin/nudge-checkin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-user-role': getAdminRole() },
+        credentials: 'include',
+        body: JSON.stringify({})
+      });
+      const data = await response.json().catch(() => ({}));
+      if (response.ok) {
+        alert(data.targeted
+          ? `Reminder sent to ${data.targeted} employee(s) who have not checked in (${data.sent} phone(s) reached).`
+          : 'Everyone with the app has already checked in today.');
+      } else {
+        alert(data.error || 'Failed to send reminders.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error sending reminders');
+    } finally {
+      setIsNudging(false);
     }
   };
 
@@ -2876,6 +2906,48 @@ const AdminDashboard = () => {
                   <label htmlFor="saturdayOff" style={{ fontWeight: '700', color: '#1e293b', cursor: 'pointer', fontSize: '14px' }}>
                     Mark Saturdays as Off (Weekend Holiday)
                   </label>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '10px', borderTop: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <input
+                      type="checkbox"
+                      id="remindersEnabled"
+                      checked={officeSettings?.remindersEnabled !== false}
+                      onChange={(e) => setOfficeSettings(prev => ({ ...prev, remindersEnabled: e.target.checked }))}
+                      style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#2563eb' }}
+                    />
+                    <label htmlFor="remindersEnabled" style={{ fontWeight: '700', color: '#1e293b', cursor: 'pointer', fontSize: '14px' }}>
+                      Check-in Reminder Notifications (Android app)
+                    </label>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>
+                    Employees get a notification when they reach the office, and again after their shift starts, if they have not checked in.
+                  </p>
+                  {officeSettings?.remindersEnabled !== false && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                      <label htmlFor="reminderDelayMinutes" style={{ fontSize: '13px', color: '#334155', fontWeight: '600' }}>
+                        Remind this many minutes after shift start:
+                      </label>
+                      <input
+                        type="number"
+                        id="reminderDelayMinutes"
+                        min="0"
+                        max="240"
+                        value={officeSettings?.reminderDelayMinutes ?? 15}
+                        onChange={(e) => setOfficeSettings(prev => ({ ...prev, reminderDelayMinutes: e.target.value }))}
+                        style={{ width: '80px', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                      />
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleNudgeCheckin}
+                    disabled={isNudging}
+                    style={{ alignSelf: 'flex-start', padding: '10px 16px', background: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}
+                  >
+                    {isNudging ? 'Sending...' : 'Remind everyone who has not checked in'}
+                  </button>
                 </div>
               </div>
 

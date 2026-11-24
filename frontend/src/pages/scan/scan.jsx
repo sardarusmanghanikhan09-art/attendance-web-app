@@ -4,6 +4,7 @@ import { API_BASE_URL } from '../../config';
 import Clock from '../../utils/Clock';
 import { Geolocation } from '@capacitor/geolocation';
 import { useOfflineSync } from '../../utils/OfflineSyncProvider';
+import { markCheckedIn } from '../../utils/reminders';
 import { preloadFaceModels, scanFields } from '../../face/faceEngine';
 import './scan.css';
 
@@ -483,6 +484,7 @@ const Scan = () => {
             localStorage.setItem('employee', JSON.stringify(loggedEmp));
           } catch (_) {}
         }
+        if (detectedAction === 'check-in') markCheckedIn(matchedEmpData.employeeId);
         setEmployeeName(data.employeeName || 'Matched Employee');
         setEmployeePhoto(data.log?.photo || data.employeePhoto);
         setScanMessage(data.message || 'Verified successfully');
@@ -507,6 +509,7 @@ const Scan = () => {
           timezoneOffset: new Date().getTimezoneOffset()
         }, { 'Content-Type': 'application/json' });
         
+        if (detectedAction === 'check-in') markCheckedIn(matchedEmpData.employeeId);
         setScanMessage('Saved offline. Will sync when connected.');
         setCountdown(3);
         setScanStatus('success');

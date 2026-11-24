@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../../config';
+import { setupReminders } from '../../utils/reminders';
 import './login.css';
 
 const Login = () => {
@@ -55,6 +56,8 @@ const Login = () => {
             } else {
                 const employeeData = { ...data.employee, password: formData.password };
                 localStorage.setItem('employee', JSON.stringify(employeeData));
+                // Check-in reminders on this phone (Android app only)
+                setupReminders(employeeData.employeeId, formData.password);
                 setSubmitStatus('success');
                 setLoggedInEmployee(employeeData);
                 setShowWelcomeSplash(true);
