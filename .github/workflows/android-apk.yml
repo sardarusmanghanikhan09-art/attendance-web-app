@@ -32,6 +32,8 @@ jobs:
         working-directory: frontend/android
         run: |
           chmod +x gradlew
+          # gradle.properties may pin a Windows JDK path (org.gradle.java.home); use the runner's JDK instead
+          sed -i '/^org.gradle.java.home/d' gradle.properties
           ./gradlew assembleDebug --no-daemon
       - name: Rename APK
         run: cp android/app/build/outputs/apk/debug/app-debug.apk AttendanceApp.apk
