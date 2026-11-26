@@ -417,7 +417,7 @@ const EmployeeProfileModal = ({
                 className={`beauty-cal-day ${date ? 'has-date' : 'empty'} ${isSelected ? 'selected' : ''}`}
                 style={{ 
                   backgroundColor: date ? badge.bg : 'transparent',
-                  borderColor: isSelected ? '#1062b3' : (date ? badge.border : 'transparent'),
+                  borderColor: isSelected ? '#2c5a88' : (date ? badge.border : 'transparent'),
                   color: date ? badge.color : 'transparent'
                 }}
               >
@@ -638,14 +638,14 @@ const EmployeeProfileModal = ({
                 {selectedDate ? (
                   <div className="beauty-inspector-card">
                     <div className="inspector-title-row">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1062b3" strokeWidth="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2c5a88" strokeWidth="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                       <h4>
                         {selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </h4>
                     </div>
 
                     {selectedDate && (new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate()) > new Date(new Date().setHours(0,0,0,0))) && (
-                      <div style={{ backgroundColor: editAttendance.status === 'Present' ? '#fef2f2' : '#eff6ff', border: editAttendance.status === 'Present' ? '1px solid #fecaca' : '1px solid #bfdbfe', color: editAttendance.status === 'Present' ? '#dc2626' : '#1e40af', padding: '8px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: '700', marginBottom: '12px' }}>
+                      <div style={{ backgroundColor: editAttendance.status === 'Present' ? '#fef2f2' : '#eef3f8', border: editAttendance.status === 'Present' ? '1px solid #fecaca' : '1px solid #c3d4e6', color: editAttendance.status === 'Present' ? '#dc2626' : '#1f4570', padding: '8px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: '700', marginBottom: '12px' }}>
                         {editAttendance.status === 'Present' ? '⚠️ Invalid Log: This future date is currently marked "Present". Click "Clear Log (Null)" below to remove it.' : 'ℹ️ Future Date: Marking "Present" is disabled, but "On Leave" is allowed.'}
                       </div>
                     )}
@@ -758,7 +758,7 @@ const EmployeeProfileModal = ({
                 ) : (
                   <div className="beauty-placeholder-card">
                     <div className="icon-circle">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1062b3" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2c5a88" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     </div>
                     <p>Select any day on the monthly calendar to inspect or adjust check-in / check-out times.</p>
                   </div>

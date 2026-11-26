@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../../config';
 import './admin-login.css';
+import NcaiBrand from '../../components/NcaiBrand';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
@@ -86,7 +87,7 @@ const AdminLogin = () => {
       <div className="admin-login-card">
         <div className="admin-login-header">
           <div className="header-icon-circle">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1062b3" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2c5a88" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
               <path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
@@ -206,6 +207,7 @@ const AdminLogin = () => {
             Back to portal selection
           </button>
         </div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 18 }}><NcaiBrand height={26} /></div>
       </div>
     </div>
   );

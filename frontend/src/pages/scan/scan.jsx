@@ -663,8 +663,8 @@ const Scan = () => {
             <div 
               className="marked-face-container"
               style={(scanMessage || '').toLowerCase().includes('out') ? {
-                border: '4px solid #1e40af',
-                backgroundColor: '#eff6ff'
+                border: '4px solid #1f4570',
+                backgroundColor: '#eef3f8'
               } : {}}
             >
               {employeePhoto && typeof employeePhoto === 'string' && !employeePhoto.includes('<svg>') ? (
@@ -673,13 +673,13 @@ const Scan = () => {
                 <img src={capturedFace} alt="Scanned Face" className="captured-face-img" />
               ) : (
                 <div className="fallback-face-circle" style={(scanMessage || '').toLowerCase().includes('out') ? {
-                  background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)'
+                  background: 'linear-gradient(135deg, #eef3f8 0%, #dde7f1 100%)'
                 } : {}} />
               )}
               <div 
                 className="mini-checkmark-badge"
                 style={(scanMessage || '').toLowerCase().includes('out') ? {
-                  backgroundColor: '#2563eb'
+                  backgroundColor: '#2c5a88'
                 } : {}}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="3.5">
@@ -689,7 +689,7 @@ const Scan = () => {
             </div>
             <h1 className="marked-title">
               {(scanMessage || '').toLowerCase().includes('out') ? (
-                <span>Exit Logged <span style={{ color: '#2563eb' }}>✓</span></span>
+                <span>Exit Logged <span style={{ color: '#2c5a88' }}>✓</span></span>
               ) : (
                 <span>Attendance Marked <span style={{ color: '#059669' }}>✓</span></span>
               )}
@@ -750,7 +750,7 @@ const Scan = () => {
                      <div style={{
                        width: `${Math.min(100, (parseFloat(scanStats.weeklyHoursCompleted || 0) / parseFloat(scanStats.weeklyHoursTarget || 40)) * 100)}%`,
                        height: '100%',
-                       backgroundColor: parseFloat(scanStats.weeklyHoursCompleted || 0) >= parseFloat(scanStats.weeklyHoursTarget || 40) ? '#16a34a' : '#1062b3',
+                       backgroundColor: parseFloat(scanStats.weeklyHoursCompleted || 0) >= parseFloat(scanStats.weeklyHoursTarget || 40) ? '#16a34a' : '#2c5a88',
                        borderRadius: '4px',
                        transition: 'width 0.5s ease-out'
                      }}></div>
@@ -905,8 +905,8 @@ const Scan = () => {
         {scanStatus === 'password' && (
           /* Password Fallback Form Card */
           <div className="marked-card">
-            <div className="marked-face-container password-fallback-circle" style={{ border: '4px solid #1062b3', backgroundColor: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1062b3" strokeWidth="2.5">
+            <div className="marked-face-container password-fallback-circle" style={{ border: '4px solid #2c5a88', backgroundColor: '#eef3f8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2c5a88" strokeWidth="2.5">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                 <path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>

@@ -145,8 +145,8 @@ const History = () => {
         category: 'HOLIDAY',
         title: 'Weekly Off-Day',
         text: 'Today is a weekend holiday. Logs submitted now will require admin approval.',
-        color: '#2563eb',
-        bgColor: '#eff6ff'
+        color: '#2c5a88',
+        bgColor: '#eef3f8'
       });
     }
 
@@ -184,7 +184,7 @@ const History = () => {
           title: `Admin Reply - ${req.requestType}`,
           text: `"${lastMsg.text}" - from ${lastMsg.senderName}`,
           color: '#0284c7',
-          bgColor: '#f0f9ff'
+          bgColor: '#f2f6fa'
         });
       }
     });
@@ -561,7 +561,7 @@ const History = () => {
             .title {
               font-size: 24px;
               font-weight: 800;
-              color: #1062b3;
+              color: #2c5a88;
               margin: 0;
             }
             .meta-section {
@@ -648,7 +648,7 @@ const History = () => {
         </head>
         <body>
           <div style="padding: 15px; background-color: #f8fafc; text-align: center; border-bottom: 1px solid #e2e8f0; margin-bottom: 20px;">
-             <button onclick="window.close(); history.back();" style="padding: 12px 24px; font-size: 16px; font-weight: 700; cursor: pointer; background: #3b82f6; color: white; border: none; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">🔙 Go Back to Dashboard</button>
+             <button onclick="window.close(); history.back();" style="padding: 12px 24px; font-size: 16px; font-weight: 700; cursor: pointer; background: #4a78a8; color: white; border: none; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">🔙 Go Back to Dashboard</button>
              <p style="margin-top: 10px; font-size: 13px; color: #64748b; margin-bottom: 0;">Click to return if the print dialog is cancelled.</p>
           </div>
           <div class="header">
@@ -858,7 +858,7 @@ const History = () => {
           </button>
           <div className="profile-menu-container">
             <div className="profile-avatar" onClick={() => setShowDropdown(!showDropdown)}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1062b3" strokeWidth="2">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2c5a88" strokeWidth="2">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
               </svg>
@@ -939,13 +939,13 @@ const History = () => {
           overflow: 'hidden'
         }}>
           {/* Decorative background element */}
-          <div style={{ position: 'absolute', top: 0, right: 0, width: '150px', height: '100%', background: 'linear-gradient(90deg, transparent, #eff6ff)', opacity: 0.8, pointerEvents: 'none' }}></div>
+          <div style={{ position: 'absolute', top: 0, right: 0, width: '150px', height: '100%', background: 'linear-gradient(90deg, transparent, #eef3f8)', opacity: 0.8, pointerEvents: 'none' }}></div>
 
-          <div className="profile-photo-circle" style={{ width: '110px', height: '110px', border: '4px solid #ffffff', boxShadow: '0 8px 24px rgba(16,98,179,0.15)', flexShrink: 0, margin: 0 }}>
+          <div className="profile-photo-circle" style={{ width: '110px', height: '110px', border: '4px solid #ffffff', boxShadow: '0 8px 24px rgba(44, 90, 136,0.15)', flexShrink: 0, margin: 0 }}>
             {employee?.photo || employee?.facePhoto ? (
               <img src={employee.photo || employee.facePhoto} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
-              <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#1062b3" strokeWidth="1.5">
+              <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#2c5a88" strokeWidth="1.5">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
               </svg>
@@ -973,7 +973,7 @@ const History = () => {
                 Password: {showCurrentPassword ? (employee?.plainPassword || employee?.password || 'N/A') : '••••••••'}
                 <button
                   onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                  style={{ background: 'none', border: 'none', color: '#1062b3', cursor: 'pointer', fontSize: '12px', fontWeight: '700', padding: 0, marginLeft: '4px' }}
+                  style={{ background: 'none', border: 'none', color: '#2c5a88', cursor: 'pointer', fontSize: '12px', fontWeight: '700', padding: 0, marginLeft: '4px' }}
                 >
                   {showCurrentPassword ? 'Hide' : 'Show'}
                 </button>
@@ -994,9 +994,9 @@ const History = () => {
             <button
               disabled={employee && !employee.isActive}
               onClick={() => { if (employee && !employee.isActive) return; setProfileModal(prev => ({ ...prev, isOpen: true })); }}
-              style={{ padding: '12px 24px', backgroundColor: (employee && !employee.isActive) ? '#cbd5e1' : '#1062b3', color: '#ffffff', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '700', cursor: (employee && !employee.isActive) ? 'not-allowed' : 'pointer', boxShadow: (employee && !employee.isActive) ? 'none' : '0 4px 12px rgba(16,98,179,0.2)', transition: 'all 0.2s ease' }}
-              onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(16,98,179,0.3)'; }}
-              onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(16,98,179,0.2)'; }}
+              style={{ padding: '12px 24px', backgroundColor: (employee && !employee.isActive) ? '#cbd5e1' : '#2c5a88', color: '#ffffff', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '700', cursor: (employee && !employee.isActive) ? 'not-allowed' : 'pointer', boxShadow: (employee && !employee.isActive) ? 'none' : '0 4px 12px rgba(44, 90, 136,0.2)', transition: 'all 0.2s ease' }}
+              onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(44, 90, 136,0.3)'; }}
+              onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(44, 90, 136,0.2)'; }}
             >
               Manage Profile
             </button>
@@ -1048,7 +1048,7 @@ const History = () => {
 
               <div className="stat-card">
                 <div className="stat-icon-circle percentage-icon">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1062b3" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2c5a88" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="19" y1="5" x2="5" y2="19" />
                     <circle cx="6.5" cy="6.5" r="2.5" />
                     <circle cx="17.5" cy="17.5" r="2.5" />
@@ -1070,7 +1070,7 @@ const History = () => {
               </div>
 
               <div className="stat-card">
-                <div className="stat-icon-circle" style={{ backgroundColor: '#e0f2fe', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div className="stat-icon-circle" style={{ backgroundColor: '#e5edf5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0369a1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10" />
                     <polyline points="12 6 12 12 16 14" />
@@ -1287,7 +1287,7 @@ const History = () => {
                                 Unread Reply
                               </span>
                             ) : req.adminSeen ? (
-                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#2563eb', fontWeight: '600', fontSize: '13px' }}>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#2c5a88', fontWeight: '600', fontSize: '13px' }}>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>
                                 Seen
                               </span>
@@ -1306,7 +1306,7 @@ const History = () => {
                               onClick={(e) => { e.stopPropagation(); handleToggleChat(req._id); }}
                               style={{
                                 padding: '8px 16px',
-                                backgroundColor: activeChatRequestId === req._id ? '#475569' : '#1062b3',
+                                backgroundColor: activeChatRequestId === req._id ? '#475569' : '#2c5a88',
                                 color: '#ffffff',
                                 border: 'none',
                                 borderRadius: '8px',
@@ -1319,7 +1319,7 @@ const History = () => {
                                 justifyContent: 'center',
                                 whiteSpace: 'nowrap',
                                 gap: '6px',
-                                boxShadow: '0 2px 4px rgba(16, 98, 179, 0.15)',
+                                boxShadow: '0 2px 4px rgba(44, 90, 136, 0.15)',
                                 width: '100%',
                                 maxWidth: '160px'
                               }}
@@ -1331,7 +1331,7 @@ const History = () => {
                               }}
                               onMouseOut={(e) => {
                                 if (activeChatRequestId !== req._id) {
-                                  e.currentTarget.style.backgroundColor = '#1062b3';
+                                  e.currentTarget.style.backgroundColor = '#2c5a88';
                                   e.currentTarget.style.transform = 'translateY(0)';
                                 }
                               }}
@@ -1360,7 +1360,7 @@ const History = () => {
                                         key={mIdx}
                                         style={{
                                           alignSelf: msg.senderRole === 'employee' ? 'flex-end' : (msg.senderRole === 'system' ? 'center' : 'flex-start'),
-                                          backgroundColor: msg.senderRole === 'employee' ? '#1062b3' : (msg.senderRole === 'system' ? '#f1f5f9' : '#ffffff'),
+                                          backgroundColor: msg.senderRole === 'employee' ? '#2c5a88' : (msg.senderRole === 'system' ? '#f1f5f9' : '#ffffff'),
                                           color: msg.senderRole === 'employee' ? '#ffffff' : '#0f172a',
                                           padding: '10px 14px',
                                           borderRadius: '12px',
@@ -1374,11 +1374,11 @@ const History = () => {
                                           textAlign: 'left'
                                         }}
                                       >
-                                        <div style={{ fontWeight: '800', fontSize: '11px', color: msg.senderRole === 'employee' ? '#bfdbfe' : (msg.senderRole === 'system' ? '#64748b' : '#10b981'), marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                        <div style={{ fontWeight: '800', fontSize: '11px', color: msg.senderRole === 'employee' ? '#c3d4e6' : (msg.senderRole === 'system' ? '#64748b' : '#10b981'), marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                                           {msg.senderRole === 'admin' ? 'Admin Reply' : msg.senderName}
                                         </div>
                                         <div style={{ lineHeight: 1.5 }}>{msg.text}</div>
-                                        <div style={{ fontSize: '10px', color: msg.senderRole === 'employee' ? '#bfdbfe' : '#94a3b8', textAlign: 'right', marginTop: '6px' }}>
+                                        <div style={{ fontSize: '10px', color: msg.senderRole === 'employee' ? '#c3d4e6' : '#94a3b8', textAlign: 'right', marginTop: '6px' }}>
                                           {msg.createdAt && !isNaN(new Date(msg.createdAt).getTime()) ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                                         </div>
                                       </div>
@@ -1402,7 +1402,7 @@ const History = () => {
                                   />
                                   <button
                                     onClick={() => handleSendChatMessage(req._id)}
-                                    style={{ padding: '8px 16px', backgroundColor: '#1062b3', color: '#ffffff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}
+                                    style={{ padding: '8px 16px', backgroundColor: '#2c5a88', color: '#ffffff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}
                                   >
                                     Reply
                                   </button>

@@ -378,7 +378,7 @@ const Dashboard = () => {
   if (!employee) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f8fafc', color: '#64748b' }}>
-        <div style={{ width: '36px', height: '36px', border: '3px solid #cbd5e1', borderTopColor: '#1062b3', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+        <div style={{ width: '36px', height: '36px', border: '3px solid #cbd5e1', borderTopColor: '#2c5a88', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
         <p style={{ marginTop: '16px', fontWeight: '600', fontSize: '15px' }}>Loading Dashboard...</p>
       </div>
     );
@@ -462,7 +462,7 @@ const Dashboard = () => {
           </button>
           <div className="profile-menu-container">
             <div className="profile-avatar" onClick={() => setShowDropdown(!showDropdown)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1062b3" strokeWidth="2">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2c5a88" strokeWidth="2">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
               </svg>
@@ -530,7 +530,7 @@ const Dashboard = () => {
 
           {/* Card 2: Today's Shift Duration */}
           <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '20px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.01)', display: 'flex', alignItems: 'center', gap: '16px', textAlign: 'left' }}>
-            <div style={{ backgroundColor: '#eff6ff', padding: '12px', borderRadius: '12px', color: '#1062b3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ backgroundColor: '#eef3f8', padding: '12px', borderRadius: '12px', color: '#2c5a88', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
             </div>
             <div>
@@ -558,7 +558,7 @@ const Dashboard = () => {
               <div style={{
                 width: `${Math.min(100, (parseFloat(weeklyHoursCompleted) / (employee?.weeklyHours || 40)) * 100)}%`,
                 height: '100%',
-                backgroundColor: parseFloat(weeklyHoursCompleted) >= (employee?.weeklyHours || 40) ? '#16a34a' : '#1062b3',
+                backgroundColor: parseFloat(weeklyHoursCompleted) >= (employee?.weeklyHours || 40) ? '#16a34a' : '#2c5a88',
                 borderRadius: '4px',
                 transition: 'width 0.5s ease-out'
               }}></div>
@@ -728,7 +728,7 @@ const Dashboard = () => {
                 <div className="dashboard-summary-header">
                   <div className="summary-title-block">
                     <h2 className="summary-title">
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1062b3" strokeWidth="2.5">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2c5a88" strokeWidth="2.5">
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                         <line x1="16" y1="2" x2="16" y2="6" />
                         <line x1="8" y1="2" x2="8" y2="6" />
@@ -948,7 +948,7 @@ const Dashboard = () => {
             </div>
             <div className="profile-modal-body" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <p style={{ color: '#475569', fontSize: '14px', marginBottom: '16px' }}>Please look at the camera to verify your identity.</p>
-              <div style={{ width: '250px', height: '250px', borderRadius: '50%', overflow: 'hidden', border: '4px solid #1062b3', position: 'relative', marginBottom: '16px', backgroundColor: '#e2e8f0' }}>
+              <div style={{ width: '250px', height: '250px', borderRadius: '50%', overflow: 'hidden', border: '4px solid #2c5a88', position: 'relative', marginBottom: '16px', backgroundColor: '#e2e8f0' }}>
                 <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }} />
               </div>
               {verifyError && <p style={{ color: '#ef4444', fontWeight: '600', fontSize: '14px', marginBottom: '12px' }}>{verifyError}</p>}

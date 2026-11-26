@@ -4,6 +4,7 @@ import { compressImage } from '../../utils/imageCompression';
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './admin-dashboard.css';
+import NcaiBrand from '../../components/NcaiBrand';
 import DepartmentDeleteModal from './DepartmentDeleteModal';
 import EmployeeProfileModal from './EmployeeProfileModal';
 import HolidayModal from './HolidayModal';
@@ -1642,7 +1643,7 @@ const AdminDashboard = () => {
             />
             <div className="brand-text">
               <h2>{loggedAdmin?.name || 'Admin Panel'}</h2>
-              <p style={{ textTransform: 'uppercase', color: '#38bdf8', fontSize: '11px', fontWeight: 'bold' }}>
+              <p style={{ textTransform: 'uppercase', color: '#df8f35', fontSize: '11px', fontWeight: 'bold' }}>
                 {loggedAdmin?.role?.replace('-', ' ') || 'Administrator'}
               </p>
             </div>
@@ -1812,6 +1813,7 @@ const AdminDashboard = () => {
             </svg>
             Logout
           </button>
+          <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 8 }}><NcaiBrand label="By" height={24} /></div>
         </div>
       </aside>
 
@@ -1842,10 +1844,10 @@ const AdminDashboard = () => {
             <div
               className={`stat-card ${statusFilter === 'All' ? 'active-filter' : ''}`}
               onClick={() => setStatusFilter('All')}
-              style={{ cursor: 'pointer', border: statusFilter === 'All' ? '2px solid #1062b3' : '1px solid #e2e8f0', transition: 'all 0.2s ease' }}
+              style={{ cursor: 'pointer', border: statusFilter === 'All' ? '2px solid #2c5a88' : '1px solid #e2e8f0', transition: 'all 0.2s ease' }}
             >
               <div className="stat-icon-wrapper total-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1062b3" strokeWidth="2.5">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2c5a88" strokeWidth="2.5">
                   <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                   <circle cx="9" cy="7" r="4" />
                   <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
@@ -2268,7 +2270,7 @@ const AdminDashboard = () => {
                                     title="Undo Checkout"
                                     onClick={() => handleUndoCheckout(log._id)}
                                     style={{
-                                      padding: '4px 8px', backgroundColor: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px'
+                                      padding: '4px 8px', backgroundColor: '#4a78a8', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px'
                                     }}
                                   >
                                     Undo Checkout
@@ -2442,9 +2444,9 @@ const AdminDashboard = () => {
                                   display: 'inline-block',
                                   width: '8px',
                                   height: '8px',
-                                  backgroundColor: '#1062b3',
+                                  backgroundColor: '#2c5a88',
                                   borderRadius: '50%',
-                                  boxShadow: '0 0 8px #1062b3',
+                                  boxShadow: '0 0 8px #2c5a88',
                                   flexShrink: 0
                                 }} title="Unseen / New Request"></span>
                               )}
@@ -2539,9 +2541,9 @@ const AdminDashboard = () => {
                                 }}
                                 style={{
                                   padding: '4px 8px',
-                                  backgroundColor: activeChatRequestId === req._id ? '#475569' : '#eff6ff',
-                                  color: activeChatRequestId === req._id ? '#fff' : '#1062b3',
-                                  border: '1px solid #dbeafe',
+                                  backgroundColor: activeChatRequestId === req._id ? '#475569' : '#eef3f8',
+                                  color: activeChatRequestId === req._id ? '#fff' : '#2c5a88',
+                                  border: '1px solid #dde7f1',
                                   borderRadius: '4px',
                                   cursor: 'pointer',
                                   fontSize: '12px',
@@ -2567,7 +2569,7 @@ const AdminDashboard = () => {
                                         key={mIdx}
                                         style={{
                                           alignSelf: msg.senderRole === 'admin' ? 'flex-end' : (msg.senderRole === 'system' ? 'center' : 'flex-start'),
-                                          backgroundColor: msg.senderRole === 'admin' ? '#1062b3' : (msg.senderRole === 'system' ? '#f1f5f9' : '#ffffff'),
+                                          backgroundColor: msg.senderRole === 'admin' ? '#2c5a88' : (msg.senderRole === 'system' ? '#f1f5f9' : '#ffffff'),
                                           color: msg.senderRole === 'admin' ? '#ffffff' : '#0f172a',
                                           padding: '10px 14px',
                                           borderRadius: '12px',
@@ -2581,11 +2583,11 @@ const AdminDashboard = () => {
                                           textAlign: 'left'
                                         }}
                                       >
-                                        <div style={{ fontWeight: '800', fontSize: '11px', color: msg.senderRole === 'admin' ? '#bfdbfe' : (msg.senderRole === 'system' ? '#64748b' : '#f59e0b'), marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                        <div style={{ fontWeight: '800', fontSize: '11px', color: msg.senderRole === 'admin' ? '#c3d4e6' : (msg.senderRole === 'system' ? '#64748b' : '#f59e0b'), marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                                           {msg.senderRole === 'employee' ? 'Employee Reply' : msg.senderName}
                                         </div>
                                         <div style={{ lineHeight: 1.5 }}>{msg.text}</div>
-                                        <div style={{ fontSize: '10px', color: msg.senderRole === 'admin' ? '#bfdbfe' : '#94a3b8', textAlign: 'right', marginTop: '6px' }}>
+                                        <div style={{ fontSize: '10px', color: msg.senderRole === 'admin' ? '#c3d4e6' : '#94a3b8', textAlign: 'right', marginTop: '6px' }}>
                                           {msg.createdAt && !isNaN(new Date(msg.createdAt).getTime()) ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                                         </div>
                                       </div>
@@ -2609,7 +2611,7 @@ const AdminDashboard = () => {
                                   />
                                   <button
                                     onClick={() => handleSendChatMessage(req._id)}
-                                    style={{ padding: '8px 16px', backgroundColor: '#1062b3', color: '#ffffff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}
+                                    style={{ padding: '8px 16px', backgroundColor: '#2c5a88', color: '#ffffff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}
                                   >
                                     Reply
                                   </button>
@@ -2765,7 +2767,7 @@ const AdminDashboard = () => {
 
           <section className="data-table-section" style={{ maxWidth: '680px', padding: '28px', backgroundColor: '#ffffff', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 12px 30px -8px rgba(15, 23, 42, 0.06)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-              <div style={{ width: '42px', height: '42px', borderRadius: '12px', backgroundColor: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb', flexShrink: 0 }}>
+              <div style={{ width: '42px', height: '42px', borderRadius: '12px', backgroundColor: '#eef3f8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2c5a88', flexShrink: 0 }}>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                   <circle cx="12" cy="10" r="3" />
@@ -2792,7 +2794,7 @@ const AdminDashboard = () => {
                   type="button"
                   onClick={handleAddressSearch}
                   disabled={isSearchingAddress}
-                  style={{ padding: '12px 20px', background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', whiteSpace: 'nowrap', fontWeight: '600', fontSize: '14px', boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)' }}
+                  style={{ padding: '12px 20px', background: 'linear-gradient(135deg, #2c5a88 0%, #234a73 100%)', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', whiteSpace: 'nowrap', fontWeight: '600', fontSize: '14px', boxShadow: '0 4px 12px rgba(44, 90, 136, 0.25)' }}
                 >
                   {isSearchingAddress ? 'Locating...' : 'Set Location'}
                 </button>
@@ -2801,7 +2803,7 @@ const AdminDashboard = () => {
 
             <form onSubmit={handleUpdateSettings} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               
-              <div style={{ background: 'linear-gradient(135deg, #f0f7ff 0%, #e0f2fe 100%)', padding: '16px', borderRadius: '14px', border: '1px solid #bae6fd', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+              <div style={{ background: 'linear-gradient(135deg, #f2f6fa 0%, #e5edf5 100%)', padding: '16px', borderRadius: '14px', border: '1px solid #bae6fd', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                 <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0284c7', flexShrink: 0, boxShadow: '0 2px 6px rgba(2, 132, 199, 0.15)' }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
@@ -2900,7 +2902,7 @@ const AdminDashboard = () => {
                         setCurrentAddress('Location not set');
                       }
                     }}
-                    style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#2563eb', marginTop: '2px' }}
+                    style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#2c5a88', marginTop: '2px' }}
                   />
                   <div>
                     <label htmlFor="geofenceEnabled" style={{ fontWeight: '700', color: '#1e293b', cursor: 'pointer', fontSize: '14px' }}>
@@ -2918,7 +2920,7 @@ const AdminDashboard = () => {
                     id="vpnCheckEnabled"
                     checked={officeSettings.vpnCheckEnabled}
                     onChange={(e) => setOfficeSettings(prev => ({ ...prev, vpnCheckEnabled: e.target.checked }))}
-                    style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#2563eb' }}
+                    style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#2c5a88' }}
                   />
                   <label htmlFor="vpnCheckEnabled" style={{ fontWeight: '700', color: '#1e293b', cursor: 'pointer', fontSize: '14px' }}>
                     Enable VPN Timezone Checking
@@ -2931,7 +2933,7 @@ const AdminDashboard = () => {
                     id="saturdayOff"
                     checked={officeSettings?.saturdayOff}
                     onChange={(e) => setOfficeSettings(prev => ({ ...prev, saturdayOff: e.target.checked }))}
-                    style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#2563eb' }}
+                    style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#2c5a88' }}
                   />
                   <label htmlFor="saturdayOff" style={{ fontWeight: '700', color: '#1e293b', cursor: 'pointer', fontSize: '14px' }}>
                     Mark Saturdays as Off (Weekend Holiday)
@@ -2945,7 +2947,7 @@ const AdminDashboard = () => {
                       id="remindersEnabled"
                       checked={officeSettings?.remindersEnabled !== false}
                       onChange={(e) => setOfficeSettings(prev => ({ ...prev, remindersEnabled: e.target.checked }))}
-                      style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#2563eb' }}
+                      style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#2c5a88' }}
                     />
                     <label htmlFor="remindersEnabled" style={{ fontWeight: '700', color: '#1e293b', cursor: 'pointer', fontSize: '14px' }}>
                       Check-in Reminder Notifications (Android app)
@@ -2974,7 +2976,7 @@ const AdminDashboard = () => {
                     type="button"
                     onClick={handleNudgeCheckin}
                     disabled={isNudging}
-                    style={{ alignSelf: 'flex-start', padding: '10px 16px', background: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}
+                    style={{ alignSelf: 'flex-start', padding: '10px 16px', background: '#2c5a88', color: '#ffffff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}
                   >
                     {isNudging ? 'Sending...' : 'Remind everyone who has not checked in'}
                   </button>
@@ -2990,7 +2992,7 @@ const AdminDashboard = () => {
                       type="button"
                       onClick={handleTestNotification}
                       disabled={isSendingTest}
-                      style={{ padding: '10px 16px', background: '#ffffff', color: '#2563eb', border: '1px solid #2563eb', borderRadius: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}
+                      style={{ padding: '10px 16px', background: '#ffffff', color: '#2c5a88', border: '1px solid #2c5a88', borderRadius: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}
                     >
                       {isSendingTest ? 'Sending...' : 'Send test notification'}
                     </button>
@@ -3425,7 +3427,7 @@ const AdminDashboard = () => {
                 <button
                   type="button"
                   onClick={() => setWebcamTarget('add')}
-                  style={{ marginTop: '8px', padding: '8px 14px', borderRadius: '8px', border: '1px solid #2563eb', background: '#eff6ff', color: '#1d4ed8', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  style={{ marginTop: '8px', padding: '8px 14px', borderRadius: '8px', border: '1px solid #2c5a88', background: '#eef3f8', color: '#234a73', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
                   Or use webcam
@@ -3446,7 +3448,7 @@ const AdminDashboard = () => {
                               height: '100%',
                               borderRadius: '8px',
                               objectFit: 'cover',
-                              border: '2px solid #1062b3'
+                              border: '2px solid #2c5a88'
                             }}
                           />
                           <button
@@ -3588,7 +3590,7 @@ const AdminDashboard = () => {
 
                       {cameraActive ? (
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                          <div style={{ position: 'relative', width: '100%', maxWidth: '280px', height: '210px', borderRadius: '8px', overflow: 'hidden', border: '2px solid #1062b3', backgroundColor: '#000' }}>
+                          <div style={{ position: 'relative', width: '100%', maxWidth: '280px', height: '210px', borderRadius: '8px', overflow: 'hidden', border: '2px solid #2c5a88', backgroundColor: '#000' }}>
                             <video ref={videoRef} autoPlay playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           </div>
                           <div style={{ display: 'flex', gap: '8px', width: '100%', maxWidth: '280px' }}>
@@ -3613,7 +3615,7 @@ const AdminDashboard = () => {
                         <button
                           type="button"
                           onClick={startUnlockCamera}
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 16px', backgroundColor: '#1062b3', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 16px', backgroundColor: '#2c5a88', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}
                         >
                           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
@@ -3771,7 +3773,7 @@ const AdminDashboard = () => {
                 <button
                   type="button"
                   onClick={() => setWebcamTarget('edit')}
-                  style={{ marginTop: '8px', padding: '8px 14px', borderRadius: '8px', border: '1px solid #2563eb', background: '#eff6ff', color: '#1d4ed8', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  style={{ marginTop: '8px', padding: '8px 14px', borderRadius: '8px', border: '1px solid #2c5a88', background: '#eef3f8', color: '#234a73', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
                   Or use webcam
@@ -3792,7 +3794,7 @@ const AdminDashboard = () => {
                             height: '50px',
                             borderRadius: '8px',
                             objectFit: 'cover',
-                            border: '2px solid #1062b3'
+                            border: '2px solid #2c5a88'
                           }}
                         />
                       ))}
@@ -4175,7 +4177,7 @@ const AdminDashboard = () => {
               <div className="dashboard-summary-header" style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '16px', marginBottom: '20px' }}>
                 <div className="summary-title-block">
                   <h2 className="summary-title">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1062b3" strokeWidth="2.5">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2c5a88" strokeWidth="2.5">
                       <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                       <line x1="16" y1="2" x2="16" y2="6" />
                       <line x1="8" y1="2" x2="8" y2="6" />
@@ -4311,7 +4313,7 @@ const AdminDashboard = () => {
                           style={{ cursor: 'pointer' }}
                           title="Click to view profile and adjust hours"
                         >
-                          <td style={{ fontWeight: '600', color: '#3b82f6' }}>{emp.name}</td>
+                          <td style={{ fontWeight: '600', color: '#4a78a8' }}>{emp.name}</td>
                           <td>{emp.id}</td>
                           <td>{emp.department}</td>
                           <td>{emp.targetHours}</td>
@@ -4512,7 +4514,7 @@ const AdminDashboard = () => {
           zIndex: 99999, color: '#1e293b'
         }}>
           <div className="spinner" style={{
-            width: '50px', height: '50px', border: '5px solid #e2e8f0', borderTop: '5px solid #3b82f6',
+            width: '50px', height: '50px', border: '5px solid #e2e8f0', borderTop: '5px solid #4a78a8',
             borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '16px'
           }}></div>
           <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>

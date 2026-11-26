@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../../config';
 import { setupReminders } from '../../utils/reminders';
 import './login.css';
+import NcaiBrand from '../../components/NcaiBrand';
 
 const Login = () => {
     const navigate = useNavigate();
@@ -115,7 +116,7 @@ const Login = () => {
             <div className="login-card">
                 <div className="login-header">
                     <div className="header-icon-circle">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1062b3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2c5a88" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                             <circle cx="12" cy="7" r="4" />
                         </svg>
@@ -232,6 +233,7 @@ const Login = () => {
                 <div className="login-footer">
                     Don't have an account? Please contact your Administrator to register.
                 </div>
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: 18 }}><NcaiBrand height={26} /></div>
             </div>
         </div>
     );

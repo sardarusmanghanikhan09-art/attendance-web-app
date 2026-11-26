@@ -57,7 +57,7 @@ const HolidayModal = ({ isOpen, onClose, onSave, onDelete, initialName, initialA
               padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1',
               fontSize: '15px', outline: 'none', transition: 'border-color 0.2s', width: '100%', boxSizing: 'border-box'
             }}
-            onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+            onFocus={(e) => e.target.style.borderColor = '#4a78a8'}
             onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
           />
         </div>
@@ -93,11 +93,11 @@ const HolidayModal = ({ isOpen, onClose, onSave, onDelete, initialName, initialA
             onClick={handleSave}
             style={{
               padding: '10px 24px', borderRadius: '8px', border: 'none',
-              backgroundColor: '#3b82f6', color: '#ffffff', fontSize: '14px', fontWeight: '600',
-              cursor: 'pointer', transition: 'background-color 0.2s', boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.3)'
+              backgroundColor: '#4a78a8', color: '#ffffff', fontSize: '14px', fontWeight: '600',
+              cursor: 'pointer', transition: 'background-color 0.2s', boxShadow: '0 4px 6px -1px rgba(74, 120, 168, 0.3)'
             }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#2c5a88'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#4a78a8'}
           >
             Save
           </button>

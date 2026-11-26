@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- NCAI brand colours (ncai.pk) -->
+    <color name="colorPrimary">#2C5A88</color>
+    <color name="colorPrimaryDark">#1F4570</color>
+    <color name="colorAccent">#DA7F33</color>
+</resources>

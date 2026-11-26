@@ -10,7 +10,7 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: 'Mulish', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   overflow-x: hidden;
 }
 
@@ -75,11 +75,11 @@ html, body {
 }
 
 .nav-link:hover {
-  color: #1062b3;
+  color: #2c5a88;
 }
 
 .nav-link.active {
-  color: #1062b3;
+  color: #2c5a88;
 }
 
 .nav-link.active::after {
@@ -89,7 +89,7 @@ html, body {
   left: 0;
   width: 100%;
   height: 3px;
-  background-color: #1062b3;
+  background-color: #2c5a88;
   border-radius: 3px;
 }
 
@@ -131,8 +131,8 @@ html, body {
 }
 
 .profile-avatar:hover {
-  border-color: #1062b3;
-  background-color: #eff6ff;
+  border-color: #2c5a88;
+  background-color: #eef3f8;
 }
 
 .profile-menu-container {
@@ -293,7 +293,7 @@ html, body {
 }
 
 .percentage-icon {
-  background-color: #eff6ff;
+  background-color: #eef3f8;
 }
 
 .stat-label {
@@ -406,8 +406,8 @@ html, body {
 }
 
 .calendar-day-cell.today {
-  border: 2px solid #1062b3;
-  color: #1062b3;
+  border: 2px solid #2c5a88;
+  color: #2c5a88;
 }
 .calendar-day-cell.weekend-holiday {
   background-color: #e2e8f0;
@@ -457,7 +457,7 @@ html, body {
 }
 
 .blue-ring-dot {
-  border: 2px solid #1062b3;
+  border: 2px solid #2c5a88;
 }
 
 .purple-dot {
@@ -598,14 +598,14 @@ html, body {
   height: 110px;
   border-radius: 50%;
   overflow: hidden;
-  box-shadow: 0 8px 24px rgba(16, 98, 179, 0.12);
+  box-shadow: 0 8px 24px rgba(44, 90, 136, 0.12);
   border: 4px solid #ffffff;
-  outline: 2px solid #1062b3;
+  outline: 2px solid #2c5a88;
   transition: all 0.3s ease;
 }
 
 .avatar-picker-container:hover {
-  outline-color: #0b4e91;
+  outline-color: #234a73;
   transform: scale(1.02);
 }
 
@@ -683,8 +683,8 @@ html, body {
 
 .modern-input:focus {
   background-color: #ffffff;
-  border-color: #1062b3;
-  box-shadow: 0 0 0 4px rgba(16, 98, 179, 0.08);
+  border-color: #2c5a88;
+  box-shadow: 0 0 0 4px rgba(44, 90, 136, 0.08);
 }
 
 .password-toggle-btn {
@@ -701,7 +701,7 @@ html, body {
 }
 
 .password-toggle-btn:hover {
-  color: #1062b3;
+  color: #2c5a88;
 }
 
 /* Footer Buttons Modern */
@@ -734,15 +734,15 @@ html, body {
 }
 
 .btn-modern.btn-save {
-  background-color: #1062b3;
+  background-color: #2c5a88;
   color: #ffffff;
-  border: 1.5px solid #1062b3;
-  box-shadow: 0 4px 12px rgba(16, 98, 179, 0.15);
+  border: 1.5px solid #2c5a88;
+  box-shadow: 0 4px 12px rgba(44, 90, 136, 0.15);
 }
 
 .btn-modern.btn-save:hover {
-  background-color: #0b4e91;
-  border-color: #0b4e91;
+  background-color: #234a73;
+  border-color: #234a73;
   transform: translateY(-1px);
 }
 
@@ -779,7 +779,7 @@ html, body {
     background-color: #ffffff;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     border-top: none !important;
-    border-left: 4px solid #1062b3 !important;
+    border-left: 4px solid #2c5a88 !important;
     display: flex !important;
     flex-wrap: wrap;
     gap: 16px 0;

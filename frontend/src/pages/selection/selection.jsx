@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../../config';
 import './selection.css';
+import NcaiBrand, { NcaiMark } from '../../components/NcaiBrand';
 
 const Selection = () => {
   const navigate = useNavigate();
@@ -147,20 +148,11 @@ const Selection = () => {
       <div className="selection-card">
         <div className="selection-header">
           <div className="logo-box-large">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 22v-3" />
-              <path d="M17 22v-5a5 5 0 0 0-10 0v5" />
-              <path d="M12 11a1 1 0 0 0-1-1H9a3 3 0 0 0-3 3v6" />
-              <path d="M14 14a2 2 0 0 0-2-2h-1c-1.66 0-3 1.34-3 3v4" />
-              <path d="M2 11.5a10 10 0 0 1 20 0" />
-              <path d="M12 2a10 10 0 0 0-8.66 5" />
-              <path d="M20.66 7A10 10 0 0 0 12 2" />
-              <path d="M12 7a5 5 0 0 0-5 5v3" />
-              <path d="M12 7a5 5 0 0 1 5 5v3" />
-            </svg>
+            <NcaiMark size={52} />
           </div>
           <h2>Smart Attendance</h2>
           <p>Please select your portal to sign in</p>
+          <div style={{ marginTop: 10 }}><NcaiBrand height={26} /></div>
         </div>
 
         {loggedEmployee || loggedAdmin ? (
@@ -169,7 +161,7 @@ const Selection = () => {
           <div className="selection-buttons-stack">
             <button className="selection-btn admin" onClick={() => navigate('/admin-login')}>
               <div className="btn-icon-circle blue">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1062b3" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2c5a88" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                   <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg>

@@ -39,7 +39,7 @@ const Clock = ({ format = 'time' }) => {
   if (format === 'timeDate') {
     return (
       <div style={{ textAlign: 'right', color: '#94a3b8' }}>
-        <div style={{ fontWeight: 'bold', color: '#38bdf8' }}>{time.toLocaleTimeString()}</div>
+        <div style={{ fontWeight: 'bold', color: '#df8f35' }}>{time.toLocaleTimeString()}</div>
         <div style={{ fontSize: '0.8rem' }}>{time.toLocaleDateString()}</div>
       </div>
     );

@@ -134,7 +134,7 @@ function WebcamCaptureDialog({ onClose, onDone, minShots = 4, maxShots = 5 }) {
             {shots.length}/{maxShots} photos
           </span>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button type="button" onClick={capture} disabled={!ready || busy || shots.length >= maxShots} style={btn('#2563eb', !ready || busy || shots.length >= maxShots)}>
+            <button type="button" onClick={capture} disabled={!ready || busy || shots.length >= maxShots} style={btn('#2c5a88', !ready || busy || shots.length >= maxShots)}>
               {busy ? 'Checking...' : 'Capture'}
             </button>
             <button type="button" onClick={finish} disabled={shots.length < minShots} style={btn('#16a34a', shots.length < minShots)}>
